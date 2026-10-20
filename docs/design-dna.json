@@ -1,0 +1,55 @@
+{
+  "_source": "Homelengo HTML template (themesflat.co/html/homelengo) — measured from the live DOM at 1440px on 2026-10-20 (index, sidebar-grid, property-details-v1, add-property, dashboard).",
+  "design_system": {
+    "color": {
+      "primary": "#1563DF",
+      "primary_hover": "#0F4FBA",
+      "ink": "#161E2D",
+      "text_variant_1": "#5C6368",
+      "text_variant_2": "#A3ABB0",
+      "line": "#E4E4E4",
+      "surface_soft_blue": "#F3F7FD",
+      "surface_dashboard": "#F7F7F7",
+      "footer_bg": "#161E2D",
+      "flag_overlay": "rgba(0,0,0,0.3)",
+      "status": { "approved": "#16A34A", "pending": "#F07B3F", "neutral": "#5C6368" }
+    },
+    "typography": {
+      "family": "Manrope (single family for display and body). Yuva adds Onest as a glyph-only fallback because Manrope has no capital Ə (U+018F).",
+      "hero_h1": "80px / 88px, weight 800, white, centered (40px on mobile)",
+      "section_subtitle": "14px, weight 600, uppercase, letter-spacing 0.8px, primary blue, centered",
+      "section_title": "40px / 1.2, weight 700, ink, centered",
+      "page_title": "40px weight 700, left aligned, with a 14px count line beside it",
+      "card_title": "18px / 25px weight 600",
+      "meta": "14px; label #5C6368 weight 400, value ink weight 600",
+      "body": "14–16px / 1.6, ink or #5C6368",
+      "nav": "16px weight 600, active item underlined in primary"
+    },
+    "spacing": { "container": "1290px content (1320 with 15px gutters)", "section_padding": "100px vertical (60px mobile)", "card_padding": "20px", "grid_gap": "30px" },
+    "shape": {
+      "card_radius": "16px, 1px solid #E4E4E4, no shadow",
+      "inner_card_radius": "12px",
+      "buttons": "pill (9999px), 52–54px tall, 16px weight 600",
+      "inputs": "pill, 52px tall, 1px #E4E4E4 border, 14px",
+      "icon_squares": "40px, radius 8px, 1px border",
+      "flag_tags": "pill, 28px tall, 12px weight 600, letter-spacing 0.8px; primary blue or black 30%",
+      "soft_section": "radius 30px block with #F3F7FD background"
+    },
+    "elevation": { "header": "0 4px 18px rgba(0,0,0,0.08)", "cards": "none — border only", "search_bar": "none (white pill on photo)" },
+    "layout": {
+      "header": "78px, logo + tagline left, nav next to it, outline 'Sign in' pill and primary 'Submit property' pill right",
+      "hero": "full-bleed photograph, centered headline + subline, two tab pills, wide white pill search bar with labelled fields split by vertical dividers, outline 'advanced' pill and primary 'Search' pill",
+      "property_grid": "3 columns at 1440, image 3:2 with location over a bottom gradient, tags top-left",
+      "location_strip": "6 tall photo cards (radius 16) with a white inner card at the bottom: count, name, round arrow button",
+      "details": "title + price row, feature/location row with square icon buttons, 3-up gallery, two columns: content left, bordered contact card right",
+      "dashboard": "#F7F7F7 page, white radius-12 panels, stat tiles with round icon, table with an ink header bar"
+    }
+  },
+  "design_style": {
+    "mood": "calm, trustworthy, corporate-clean real estate",
+    "composition": "centered section headings, symmetric grids, generous but even whitespace",
+    "imagery": "large bright daylight photography; blue skies; interiors with natural light",
+    "ornamentation": "minimal — borders and pills; no gradients except the photo overlay"
+  },
+  "visual_effects": { "enabled": false, "notes": "Reference uses wow.js fade-ins; Yuva omits scroll reveals (reduced motion, no decorative animation)." }
+}

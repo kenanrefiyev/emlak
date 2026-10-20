@@ -1,0 +1,245 @@
+"use client";
+
+import { useId, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { SlidersHorizontal, X } from "lucide-react";
+import { Link, useRouter } from "@/i18n/navigation";
+import type { ListingFilters } from "@/lib/search/listing-filters";
+import { FURNISHING, GENDER_PREFS, type ListingCategory } from "@/lib/domain";
+
+interface Opt {
+  value: string;
+  label: string;
+}
+interface Props {
+  path: string;
+  filters: ListingFilters;
+  categories: readonly ListingCategory[];
+  districts: Opt[];
+  neighborhoods: (Opt & { districtValue: string })[];
+  metros: (Opt & { line: string })[];
+  universities: Opt[];
+  showStudentFilters: boolean;
+  segment: "students" | "family";
+}
+
+/**
+ * Filter panel. A plain GET form (works without JS); with JS it drops empty
+ * fields from the URL and narrows neighborhoods to the chosen district.
+ * On small screens it lives in a drawer.
+ */
+export function FilterForm({ path, filters: f, categories, districts, neighborhoods, metros, universities, showStudentFilters, segment }: Props) {
+  const nav = useTranslations("nav");
+  const t = useTranslations("search");
+  const c = useTranslations("common");
+  const cat = useTranslations("categories");
+  const e = useTranslations("enums");
+  const locale = useLocale();
+  const router = useRouter();
+  const id = useId();
+  const [district, setDistrict] = useState(f.district ?? "");
+  const [open, setOpen] = useState(false);
+  const visibleAreas = district ? neighborhoods.filter((n) => n.districtValue === district) : neighborhoods;
+
+  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    const fd = new FormData(ev.currentTarget);
+    const query: Record<string, string> = {};
+    const types = fd.getAll("type").map(String);
+    if (types.length) query.type = types.join(",");
+    for (const [k, v] of fd.entries()) {
+      if (k === "type" || typeof v !== "string" || !v.trim()) continue;
+      query[k] = v.trim();
+    }
+    if (f.sort !== "newest") query.sort = f.sort;
+    if (f.view === "list") query.view = "list";
+    setOpen(false);
+    router.push({ pathname: path, query });
+  }
+
+  const sel = (name: string, label: string, opts: Opt[], value: string | undefined, onChange?: (v: string) => void) => (
+    <div>
+      <label htmlFor={`${id}-${name}`} className="label">
+        {label}
+      </label>
+      <select
+        id={`${id}-${name}`}
+        name={name}
+        className="field"
+        defaultValue={onChange ? undefined : (value ?? "")}
+        value={onChange ? (value ?? "") : undefined}
+        onChange={onChange ? (ev) => onChange(ev.target.value) : undefined}
+      >
+        <option value="">{c("any")}</option>
+        {opts.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const form = (
+    <form method="get" action={`/${locale}${path}`} onSubmit={onSubmit} className="space-y-5" aria-label={t("filters")}>
+      <div className="grid grid-cols-2 gap-2.5">
+        {(["students", "family"] as const).map((sg) => (
+          <Link
+            key={sg}
+            href={`/${sg}`}
+            aria-current={segment === sg ? "page" : undefined}
+            className="btn !min-h-12 !px-2 bg-gray text-ink aria-[current=page]:bg-brand aria-[current=page]:text-white"
+          >
+            {nav(sg)}
+          </Link>
+        ))}
+      </div>
+      <div>
+        <label htmlFor={`${id}-q`} className="label">
+          {t("keyword")}
+        </label>
+        <input id={`${id}-q`} name="q" type="search" defaultValue={f.q} placeholder={t("keywordPlaceholder")} className="field" maxLength={80} />
+      </div>
+
+      <fieldset>
+        <legend className="label">{t("type")}</legend>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((k) => (
+            <label key={k} className="chip cursor-pointer has-[:checked]:bg-brand has-[:checked]:text-white has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand">
+              <input type="checkbox" name="type" value={k.toLowerCase()} defaultChecked={f.categories.includes(k)} className="sr-only" />
+              {cat(k)}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {sel("district", t("district"), districts, district, (v) => setDistrict(v))}
+      {sel("area", t("neighborhood"), visibleAreas, f.neighborhood)}
+      {sel("metro", t("metro"), metros, f.metro)}
+      {showStudentFilters && sel("uni", t("university"), universities, f.university)}
+
+      <fieldset>
+        <legend className="label">{t("price")}</legend>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label htmlFor={`${id}-min`} className="sr-only">
+              {t("priceMin")}
+            </label>
+            <input id={`${id}-min`} name="min" type="number" inputMode="numeric" min={0} max={20000} defaultValue={f.priceMin} placeholder={t("priceMin")} className="field" />
+          </div>
+          <div>
+            <label htmlFor={`${id}-max`} className="sr-only">
+              {t("priceMax")}
+            </label>
+            <input id={`${id}-max`} name="max" type="number" inputMode="numeric" min={0} max={20000} defaultValue={f.priceMax} placeholder={t("priceMax")} className="field" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="label">{t("rooms")}</legend>
+        <div className="flex flex-wrap gap-2">
+          {[0, 1, 2, 3, 4].map((n) => (
+            <label key={n} className="chip min-w-11 cursor-pointer justify-center has-[:checked]:bg-brand has-[:checked]:text-white has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand">
+              <input type="radio" name="rooms" value={n ? String(n) : ""} defaultChecked={(f.rooms ?? 0) === n} className="sr-only" />
+              {n === 0 ? t("roomsAny") : n === 4 ? t("rooms4") : n}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {showStudentFilters && (
+        <div>
+          <label htmlFor={`${id}-spaces`} className="label">
+            {t("spaces")}
+          </label>
+          <input id={`${id}-spaces`} name="spaces" type="number" inputMode="numeric" min={1} max={10} defaultValue={f.spaces} className="field" />
+        </div>
+      )}
+
+      {sel("furnishing", t("furnishing"), FURNISHING.map((k) => ({ value: k, label: e(`furnishing.${k}`) })), f.furnishing)}
+      {showStudentFilters && sel("gender", t("gender"), GENDER_PREFS.filter((g) => g !== "ANY").map((k) => ({ value: k, label: e(`gender.${k}`) })), f.gender)}
+
+      <div>
+        <label htmlFor={`${id}-movein`} className="label">
+          {t("moveIn")}
+        </label>
+        <input id={`${id}-movein`} name="movein" type="date" defaultValue={f.moveIn} className="field" aria-describedby={`${id}-movein-h`} />
+        <p id={`${id}-movein-h`} className="hint mt-1">
+          {t("moveInHint")}
+        </p>
+      </div>
+      <div>
+        <label htmlFor={`${id}-duration`} className="label">
+          {t("duration")}
+        </label>
+        <input id={`${id}-duration`} name="duration" type="number" inputMode="numeric" min={1} max={36} defaultValue={f.duration} className="field" aria-describedby={`${id}-dur-h`} />
+        <p id={`${id}-dur-h`} className="hint mt-1">
+          {t("durationHint")}
+        </p>
+      </div>
+
+      {sel(
+        "posted",
+        t("posted"),
+        [
+          { value: "1", label: t("posted1") },
+          { value: "7", label: t("posted7") },
+          { value: "30", label: t("posted30") },
+        ],
+        f.postedWithin ? String(f.postedWithin) : undefined,
+      )}
+
+      <div className="space-y-1">
+        <label className="flex min-h-11 cursor-pointer items-center gap-3">
+          <input type="checkbox" name="utilities" value="1" defaultChecked={f.utilitiesIncluded} className="size-5 accent-brand" />
+          <span className="text-[0.9375rem]">{t("utilitiesIncluded")}</span>
+        </label>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3">
+          <input type="checkbox" name="verified" value="1" defaultChecked={f.verified} className="size-5 accent-brand" />
+          <span className="text-[0.9375rem]">{t("verified")}</span>
+        </label>
+      </div>
+
+      <div className="sticky bottom-0 -mx-1 flex flex-col gap-2 bg-paper px-1 pt-2 pb-1">
+        <button type="submit" className="btn btn-primary w-full">
+          {c("apply")}
+        </button>
+        <a href={`/${locale}${path}`} className="btn btn-ghost w-full" onClick={(ev) => { ev.preventDefault(); setOpen(false); router.push(path); }}>
+          {c("clear")}
+        </a>
+      </div>
+    </form>
+  );
+
+  return (
+    <>
+      <div className="lg:hidden">
+        <button type="button" className="btn btn-outline w-full" aria-expanded={open} aria-controls={`${id}-drawer`} onClick={() => setOpen(true)}>
+          <SlidersHorizontal className="size-4" aria-hidden />
+          {t("showFilters")}
+        </button>
+      </div>
+      <div
+        id={`${id}-drawer`}
+        className={`${open ? "fixed inset-0 z-50 flex" : "hidden"} lg:static lg:z-auto lg:block`}
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? true : undefined}
+        aria-label={open ? t("filters") : undefined}
+      >
+        {open && <div className="absolute inset-0 bg-ink/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
+        <div className={open ? "relative ml-auto h-full w-[min(24rem,100vw)] overflow-y-auto bg-paper p-5" : "lg:rounded-2xl lg:border lg:border-line lg:p-6"}>
+          {open && (
+            <div className="mb-4 flex items-center justify-between lg:hidden">
+              <h2 className="t-h3">{t("filters")}</h2>
+              <button type="button" className="btn btn-ghost !px-2.5" onClick={() => setOpen(false)} aria-label={c("close")}>
+                <X className="size-5" aria-hidden />
+              </button>
+            </div>
+          )}
+          {form}
+        </div>
+      </div>
+    </>
+  );
+}

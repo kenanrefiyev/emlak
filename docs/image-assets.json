@@ -1,0 +1,844 @@
+{
+  "note": "Illustrative stock photography. None of these photos show a real listed property; demo listings are flagged is_demo.",
+  "generatedBy": "scripts/fetch-site-photos.mjs",
+  "site": [
+    {
+      "file": "public/images/roomhub-hero-apartment.jpg",
+      "use": "Home page hero (full-bleed, sizes=100vw)",
+      "width": 3840,
+      "height": 2560,
+      "bytes": 665959,
+      "source": "https://unsplash.com/photos/contemporary-dining-area-overlooking-the-beach-and-ocean-W3MckxPY6Mo",
+      "author": "Caroline Badran",
+      "location": "Not Baku — illustrative apartment interior",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/lifestyle-living-room-01.jpg",
+      "use": "Home page safety section (portrait, fills the 5:6 frame without upscaling)",
+      "width": 1800,
+      "height": 2250,
+      "bytes": 311530,
+      "source": "https://unsplash.com/photos/modern-living-room-with-natural-light-and-wooden-accents-2cfj0Y5ch00",
+      "author": "Puscas Adryan",
+      "location": "Ksamil, Albania — illustrative interior",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/apartment-bedroom-01.jpg",
+      "use": "Sign-in / sign-up side panel",
+      "width": 2000,
+      "height": 1333,
+      "bytes": 133589,
+      "source": "https://unsplash.com/photos/two-beds-in-a-bright-modern-bedroom-with-large-windows-JJPJezr_rhg",
+      "author": "Fazeel PH",
+      "location": "United Arab Emirates",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/district-sebail-02.jpg",
+      "use": "District card: Səbail",
+      "width": 1600,
+      "height": 2844,
+      "bytes": 569914,
+      "source": "https://unsplash.com/photos/the-maiden-tower-stands-tall-in-the-bright-sun-s-K48J3BWcc",
+      "author": "Zulfugar Karimov",
+      "location": "Maiden Tower, İçərişəhər, Baku",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/district-nerimanov-02.jpg",
+      "use": "District card: Nərimanov",
+      "width": 1600,
+      "height": 2133,
+      "bytes": 338545,
+      "source": "https://unsplash.com/photos/a-building-with-glass-windows-lTe5nmHWTts",
+      "author": "İltun Huseynli",
+      "location": "Heydar Aliyev Center, Baku",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/district-nesimi.jpg",
+      "use": "District card: Nəsimi",
+      "width": 1200,
+      "height": 1600,
+      "bytes": 273770,
+      "source": "https://unsplash.com/photos/cars-are-parked-in-front-of-a-grand-building-achTzEHXvLk",
+      "author": "rishi",
+      "location": "Central Baku",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/district-yasamal.jpg",
+      "use": "District card: Yasamal",
+      "width": 1200,
+      "height": 1800,
+      "bytes": 252707,
+      "source": "https://unsplash.com/photos/a-large-brown-building-sitting-on-the-side-of-a-road-9RoLnLJZdVo",
+      "author": "Vikas Shetty",
+      "location": "Baku",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/district-xetai.jpg",
+      "use": "District card: Xətai",
+      "width": 1200,
+      "height": 1800,
+      "bytes": 270348,
+      "source": "https://unsplash.com/photos/red-car-drives-past-modern-apartment-buildings--idQer1Lh0k",
+      "author": "Silver Ringvee",
+      "location": "Baku",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/district-nizami.jpg",
+      "use": "District card: Nizami",
+      "width": 1200,
+      "height": 1600,
+      "bytes": 298242,
+      "source": "https://unsplash.com/photos/elegant-buildings-line-a-quiet-sunlit-street-I0pNd4UkgGw",
+      "author": "rishi",
+      "location": "Baku",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/images/district-binegedi.jpg",
+      "use": "District card: Binəqədi",
+      "width": 1200,
+      "height": 1800,
+      "bytes": 287976,
+      "source": "https://unsplash.com/photos/beautiful-building-with-balconies-against-a-blue-sky-bA8vwOAIWUg",
+      "author": "Nicat Almemmedov",
+      "location": "Baku",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    }
+  ],
+  "demoListings": [
+    {
+      "file": "public/demo/room-1633948393301-d43e3ec0e5cd.webp",
+      "source": "https://images.unsplash.com/photo-1633948393301-d43e3ec0e5cd?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1632119289059-793dd347950f.webp",
+      "source": "https://images.unsplash.com/photo-1632119289059-793dd347950f?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1463620910506-d0458143143e.webp",
+      "source": "https://images.unsplash.com/photo-1463620910506-d0458143143e?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1615874959474-d609969a20ed.webp",
+      "source": "https://images.unsplash.com/photo-1615874959474-d609969a20ed?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1696762932825-2737db830bbe.webp",
+      "source": "https://images.unsplash.com/photo-1696762932825-2737db830bbe?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1633944095397-878622ebc01c.webp",
+      "source": "https://images.unsplash.com/photo-1633944095397-878622ebc01c?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1595526114035-0d45ed16cfbf.webp",
+      "source": "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1719569332255-030dd517952f.webp",
+      "source": "https://images.unsplash.com/photo-1719569332255-030dd517952f?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1585128792103-0b591f96512e.webp",
+      "source": "https://images.unsplash.com/photo-1585128792103-0b591f96512e?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1531835551805-16d864c8d311.webp",
+      "source": "https://images.unsplash.com/photo-1531835551805-16d864c8d311?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1552558636-f6a8f071c2b3.webp",
+      "source": "https://images.unsplash.com/photo-1552558636-f6a8f071c2b3?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1774578342100-f779e988c83d.webp",
+      "source": "https://images.unsplash.com/photo-1774578342100-f779e988c83d?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1541004995602-b3e898709909.webp",
+      "source": "https://images.unsplash.com/photo-1541004995602-b3e898709909?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1765464184843-105e144bd54b.webp",
+      "source": "https://images.unsplash.com/photo-1765464184843-105e144bd54b?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1744974256549-8ece7cdb5dd2.webp",
+      "source": "https://images.unsplash.com/photo-1744974256549-8ece7cdb5dd2?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1781249144235-7dff19f6e7db.webp",
+      "source": "https://images.unsplash.com/photo-1781249144235-7dff19f6e7db?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1786886393825-a2aff98f5f0a.webp",
+      "source": "https://images.unsplash.com/photo-1786886393825-a2aff98f5f0a?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1734599505058-6653a0d8d3ff.webp",
+      "source": "https://images.unsplash.com/photo-1734599505058-6653a0d8d3ff?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1781249144056-ec397e444dfa.webp",
+      "source": "https://images.unsplash.com/photo-1781249144056-ec397e444dfa?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1734599511415-cb4a52aea2fe.webp",
+      "source": "https://images.unsplash.com/photo-1734599511415-cb4a52aea2fe?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1758060215425-303300b1c7e2.webp",
+      "source": "https://images.unsplash.com/photo-1758060215425-303300b1c7e2?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1776348065117-02285a905b0b.webp",
+      "source": "https://images.unsplash.com/photo-1776348065117-02285a905b0b?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1774161321754-439bd8613f56.webp",
+      "source": "https://images.unsplash.com/photo-1774161321754-439bd8613f56?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1619810230359-b2c2f61c49cd.webp",
+      "source": "https://images.unsplash.com/photo-1619810230359-b2c2f61c49cd?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/room-1512918728675-ed5a9ecdebfd.webp",
+      "source": "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1522708323590-d24dbb6b0267.webp",
+      "source": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1502672260266-1c1ef2d93688.webp",
+      "source": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1583847268964-b28dc8f51f92.webp",
+      "source": "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1665249934445-1de680641f50.webp",
+      "source": "https://images.unsplash.com/photo-1665249934445-1de680641f50?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1612419299101-6c294dc2901d.webp",
+      "source": "https://images.unsplash.com/photo-1612419299101-6c294dc2901d?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1619989652700-9984844cb0ea.webp",
+      "source": "https://images.unsplash.com/photo-1619989652700-9984844cb0ea?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1613575831056-0acd5da8f085.webp",
+      "source": "https://images.unsplash.com/photo-1613575831056-0acd5da8f085?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1560448204-e02f11c3d0e2.webp",
+      "source": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1564078516393-cf04bd966897.webp",
+      "source": "https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1628592102751-ba83b0314276.webp",
+      "source": "https://images.unsplash.com/photo-1628592102751-ba83b0314276?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1763827513396-5917fc6c84f3.webp",
+      "source": "https://images.unsplash.com/photo-1763827513396-5917fc6c84f3?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1776482128012-a47f853abd57.webp",
+      "source": "https://images.unsplash.com/photo-1776482128012-a47f853abd57?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1615800002234-05c4d488696c.webp",
+      "source": "https://images.unsplash.com/photo-1615800002234-05c4d488696c?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1633505899118-4ca6bd143043.webp",
+      "source": "https://images.unsplash.com/photo-1633505899118-4ca6bd143043?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1656122381069-9ec666d95cf1.webp",
+      "source": "https://images.unsplash.com/photo-1656122381069-9ec666d95cf1?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1609081144289-eacc3108cd03.webp",
+      "source": "https://images.unsplash.com/photo-1609081144289-eacc3108cd03?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1781249144562-e15ab4c9f63c.webp",
+      "source": "https://images.unsplash.com/photo-1781249144562-e15ab4c9f63c?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/living-1713832139688-79676097edde.webp",
+      "source": "https://images.unsplash.com/photo-1713832139688-79676097edde?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1609241506098-80fc37c6325f.webp",
+      "source": "https://images.unsplash.com/photo-1609241506098-80fc37c6325f?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1574739782594-db4ead022697.webp",
+      "source": "https://images.unsplash.com/photo-1574739782594-db4ead022697?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1593853761096-d0423b545cf9.webp",
+      "source": "https://images.unsplash.com/photo-1593853761096-d0423b545cf9?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1702014862053-946a122b920d.webp",
+      "source": "https://images.unsplash.com/photo-1702014862053-946a122b920d?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1722942115826-13208bc3f8c5.webp",
+      "source": "https://images.unsplash.com/photo-1722942115826-13208bc3f8c5?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1721522000055-795cf74e9856.webp",
+      "source": "https://images.unsplash.com/photo-1721522000055-795cf74e9856?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1757387240036-d7eb9b096c40.webp",
+      "source": "https://images.unsplash.com/photo-1757387240036-d7eb9b096c40?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/kitchen-1484154218962-a197022b5858.webp",
+      "source": "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/bath-1584622650111-993a426fbf0a.webp",
+      "source": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/bath-1631889993959-41b4e9c6e3c5.webp",
+      "source": "https://images.unsplash.com/photo-1631889993959-41b4e9c6e3c5?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/bath-1661107259637-4e1c55462428.webp",
+      "source": "https://images.unsplash.com/photo-1661107259637-4e1c55462428?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/bath-1576698483491-8c43f0862543.webp",
+      "source": "https://images.unsplash.com/photo-1576698483491-8c43f0862543?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/dorm-1555854877-bab0e564b8d5.webp",
+      "source": "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/dorm-1709805619372-40de3f158e83.webp",
+      "source": "https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/dorm-1781415980730-bfcf192e38bc.webp",
+      "source": "https://images.unsplash.com/photo-1781415980730-bfcf192e38bc?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/dorm-1721743169043-dda0212ce3d4.webp",
+      "source": "https://images.unsplash.com/photo-1721743169043-dda0212ce3d4?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/dorm-1723258343563-7d71a55d6dfa.webp",
+      "source": "https://images.unsplash.com/photo-1723258343563-7d71a55d6dfa?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/dorm-1636917754428-60ece5e521df.webp",
+      "source": "https://images.unsplash.com/photo-1636917754428-60ece5e521df?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1545324418-cc1a3fa10c00.webp",
+      "source": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1592276040264-e10344a6a10e.webp",
+      "source": "https://images.unsplash.com/photo-1592276040264-e10344a6a10e?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1571236673892-13d222da2019.webp",
+      "source": "https://images.unsplash.com/photo-1571236673892-13d222da2019?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1610286986642-057ece0c3656.webp",
+      "source": "https://images.unsplash.com/photo-1610286986642-057ece0c3656?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1753161140588-664024dc390b.webp",
+      "source": "https://images.unsplash.com/photo-1753161140588-664024dc390b?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1773389061450-eed91161f14d.webp",
+      "source": "https://images.unsplash.com/photo-1773389061450-eed91161f14d?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1737619954413-5f43fa6a25d9.webp",
+      "source": "https://images.unsplash.com/photo-1737619954413-5f43fa6a25d9?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1746616654126-35bd7feb0a38.webp",
+      "source": "https://images.unsplash.com/photo-1746616654126-35bd7feb0a38?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1602485487042-e5e9b528c389.webp",
+      "source": "https://images.unsplash.com/photo-1602485487042-e5e9b528c389?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1782297247938-bfc51277b82f.webp",
+      "source": "https://images.unsplash.com/photo-1782297247938-bfc51277b82f?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/building-1565363887715-8884629e09ee.webp",
+      "source": "https://images.unsplash.com/photo-1565363887715-8884629e09ee?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1596306499398-8d88944a5ec4.webp",
+      "source": "https://images.unsplash.com/photo-1596306499398-8d88944a5ec4?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1596306499300-0b7b1689b9f6.webp",
+      "source": "https://images.unsplash.com/photo-1596306499300-0b7b1689b9f6?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1785608149335-fa1cd223097c.webp",
+      "source": "https://images.unsplash.com/photo-1785608149335-fa1cd223097c?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1744704015980-9842c2314c43.webp",
+      "source": "https://images.unsplash.com/photo-1744704015980-9842c2314c43?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1743586652972-0f8994efe810.webp",
+      "source": "https://images.unsplash.com/photo-1743586652972-0f8994efe810?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1616701639706-a89d1a609eda.webp",
+      "source": "https://images.unsplash.com/photo-1616701639706-a89d1a609eda?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1595980542930-9eea66620834.webp",
+      "source": "https://images.unsplash.com/photo-1595980542930-9eea66620834?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1622314621630-0d24bcb5aa67.webp",
+      "source": "https://images.unsplash.com/photo-1622314621630-0d24bcb5aa67?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1624367264208-d887b5536a62.webp",
+      "source": "https://images.unsplash.com/photo-1624367264208-d887b5536a62?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1642856761437-5b5efcb36d81.webp",
+      "source": "https://images.unsplash.com/photo-1642856761437-5b5efcb36d81?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1608315172253-d6d45356d03a.webp",
+      "source": "https://images.unsplash.com/photo-1608315172253-d6d45356d03a?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1716758519404-cabca37863b3.webp",
+      "source": "https://images.unsplash.com/photo-1716758519404-cabca37863b3?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1676302940300-dd9fd542bf0f.webp",
+      "source": "https://images.unsplash.com/photo-1676302940300-dd9fd542bf0f?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1747285726261-d14a2fe9450f.webp",
+      "source": "https://images.unsplash.com/photo-1747285726261-d14a2fe9450f?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    },
+    {
+      "file": "public/demo/city-1747285726502-0ecad7298221.webp",
+      "source": "https://images.unsplash.com/photo-1747285726502-0ecad7298221?w=1600&q=90&fm=jpg&fit=max",
+      "license": {
+        "name": "Unsplash License",
+        "url": "https://unsplash.com/license"
+      }
+    }
+  ]
+}
