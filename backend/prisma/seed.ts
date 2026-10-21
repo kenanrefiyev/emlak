@@ -6,10 +6,10 @@
  *  2. Demo content (users @demo.yuva.test, listings/ads with is_demo = true) is
  *     deleted and recreated. Real (non-demo) rows are never touched.
  * Refuses to run with NODE_ENV=production unless SEED_ALLOW_PRODUCTION=1, and
- * skips demo content entirely when SEED_DEMO=0. With SEED_IF_EMPTY=1 it does
- * nothing once districts exist — the Vercel build (npm run vercel-build) uses
- * this so a fresh database gets reference data, while later deploys never
- * overwrite admin edits.
+ * skips demo content entirely when SEED_DEMO=0. With SEED_IF_EMPTY=1 each part
+ * runs only while it is missing (reference: no districts yet; demo: no demo
+ * listings yet) — the Vercel build (npm run vercel-build) uses this, so later
+ * deploys never overwrite admin edits or recreate demo rows under new ids.
  * Demo accounts get SEED_DEMO_PASSWORD if set; otherwise they cannot log in.
  */
 import "dotenv/config";
@@ -601,15 +601,16 @@ async function seedDemo() {
 }
 
 async function main() {
-  if (process.env.SEED_IF_EMPTY === "1" && (await db.district.count()) > 0) {
-    console.log("reference data already present — skipping seed");
+  const onlyIfEmpty = process.env.SEED_IF_EMPTY === "1";
+  if (onlyIfEmpty && (await db.district.count()) > 0) console.log("reference data already present — skipping");
+  else await seedReference();
+  if (process.env.SEED_DEMO === "0") return;
+  if (onlyIfEmpty && (await db.listing.count({ where: { isDemo: true } })) > 0) {
+    console.log("demo content already present — skipping");
     return;
   }
-  await seedReference();
-  if (process.env.SEED_DEMO !== "0") {
-    if (!photos.length) console.warn("frontend/public/demo is empty — run `npm run photos:fetch` first for demo photos");
-    await seedDemo();
-  }
+  if (!photos.length) console.warn("frontend/public/demo is empty — run `npm run photos:fetch` first for demo photos");
+  await seedDemo();
 }
 
 main()

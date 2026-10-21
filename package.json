@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev frontend --turbopack",
     "build": "next build frontend",
-    "vercel-build": "prisma migrate deploy --config backend/prisma.config.ts && SEED_IF_EMPTY=1 SEED_DEMO=0 SEED_ALLOW_PRODUCTION=1 tsx backend/prisma/seed.ts && next build frontend",
+    "vercel-build": "prisma migrate deploy --config backend/prisma.config.ts && SEED_IF_EMPTY=1 SEED_ALLOW_PRODUCTION=1 tsx backend/prisma/seed.ts && next build frontend",
     "start": "next start frontend",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
