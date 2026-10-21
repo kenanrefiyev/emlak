@@ -91,11 +91,16 @@ export default async function HomePage({ params, searchParams }: Props) {
 
   return (
     <>
-      {/* Hero — full-bleed photo, centered headline, tabbed pill search */}
-      <section className="relative isolate overflow-hidden">
-        <Image src={HERO_PHOTO.src} alt={t("heroPhotoAlt")} fill priority quality={85} sizes="100vw" className="-z-20 object-cover object-[center_55%]" />
-        <div className="absolute inset-0 -z-10 bg-[#161e2d]/45" aria-hidden />
-        <div className="shell pt-20 pb-16 text-center sm:pt-28 lg:pt-36 lg:pb-32">
+      {/* Hero — full-bleed photo, centered headline, tabbed pill search. On
+          phones the section is far taller than wide, so a background photo
+          would show only a sliver; there the whole photo sits on top at its
+          own 3:2 ratio and fades into the dark panel holding the search. */}
+      <section className="relative isolate overflow-hidden bg-[#161e2d] sm:bg-transparent">
+        <div className="relative aspect-[3/2] w-full sm:absolute sm:inset-0 sm:-z-20 sm:aspect-auto">
+          <Image src={HERO_PHOTO.src} alt={t("heroPhotoAlt")} fill priority quality={85} sizes="100vw" className="object-cover sm:object-[center_55%]" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent from-55% to-[#161e2d] sm:bg-none sm:bg-[#161e2d]/45" aria-hidden />
+        </div>
+        <div className="shell relative -mt-14 pb-12 text-center sm:mt-0 sm:pt-28 sm:pb-16 lg:pt-36 lg:pb-32">
           <h1 className="t-hero mx-auto max-w-5xl text-white">{t("title")}</h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-white/90">{t("lead")}</p>
           <div className="mx-auto mt-10 max-w-[1290px] lg:mt-16">
