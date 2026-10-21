@@ -15,8 +15,15 @@
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/app/*": ["./frontend/app/*"],
+      "@/components/*": ["./frontend/components/*"],
+      "@/i18n/*": ["./frontend/i18n/*"],
+      "@/server/*": ["./backend/server/*"],
+      "@/lib/*": ["./backend/lib/*"],
+      "@/generated/*": ["./backend/generated/*"]
+    }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
+  "include": ["frontend/next-env.d.ts", "**/*.ts", "**/*.tsx", "frontend/.next/types/**/*.ts", "frontend/.next/dev/types/**/*.ts"],
   "exclude": ["node_modules"]
 }

@@ -1,0 +1,872 @@
+// Yuva — student rental & roommate marketplace for Baku.
+// Conventions: English identifiers, snake_case tables, explicit status enums,
+// reference data (districts, metro, universities, amenities) carries one name
+// column per public locale; user-generated listing text lives in
+// ListingTranslation so one canonical listing serves all four languages.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Users & auth ─────────────────────────────
+
+enum Role {
+  USER
+  OWNER
+  AGENT
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum Locale {
+  az
+  tr
+  ru
+  en
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  passwordHash    String        @map("password_hash")
+  name            String
+  phone           String? // E.164, validated; never shown publicly without consent
+  role            Role          @default(USER)
+  status          AccountStatus @default(ACTIVE)
+  suspendedReason String?       @map("suspended_reason")
+  emailVerifiedAt DateTime?     @map("email_verified_at")
+  preferredLocale Locale        @default(az) @map("preferred_locale")
+  lastLoginAt     DateTime?     @map("last_login_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  profile          UserProfile?
+  agentProfile     AgentProfile?
+  sessions         Session[]
+  authTokens       AuthToken[]
+  listings         Listing[]
+  roommateAds      RoommateAd[]
+  savedListings    SavedListing[]
+  savedSearches    SavedSearch[]
+  sentRequests     ContactRequest[]      @relation("ContactSender")
+  receivedRequests ContactRequest[]      @relation("ContactRecipient")
+  reportsFiled     Report[]              @relation("ReportReporter")
+  reportsAgainst   Report[]              @relation("ReportTargetUser")
+  reportsResolved  Report[]              @relation("ReportResolver")
+  verificationReqs VerificationRequest[] @relation("VerificationApplicant")
+  verificationRevs VerificationRequest[] @relation("VerificationReviewer")
+  subscriptions    Subscription[]
+  auditLogs        AuditLog[]
+  featuredCreated  FeaturedListing[]
+
+  @@index([role, status])
+  @@map("users")
+}
+
+model UserProfile {
+  userId       String   @id @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio          String?
+  hometown     String? // region the student comes from, free text
+  universityId String?  @map("university_id")
+  university   University? @relation(fields: [universityId], references: [id], onDelete: SetNull)
+  studyYear    Int?     @map("study_year")
+  // Whether accepted contacts may see the phone / WhatsApp link.
+  sharePhoneOnAccept Boolean @default(true) @map("share_phone_on_accept")
+  avatarKey    String?  @map("avatar_key")
+  avatarUrl    String?  @map("avatar_url")
+  // Languages the person speaks with tenants (ISO codes: az, tr, ru, en, …).
+  languages    String[] @default([])
+  // Identity / ownership review for landlords (agents use AgentProfile).
+  verificationStatus VerificationStatus @default(NONE) @map("verification_status")
+  verifiedAt   DateTime? @map("verified_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("user_profiles")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique @map("token_hash")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+model AuthToken {
+  id        String        @id @default(cuid())
+  tokenHash String        @unique @map("token_hash")
+  type      AuthTokenType
+  userId    String        @map("user_id")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime      @map("expires_at")
+  usedAt    DateTime?     @map("used_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([userId, type])
+  @@map("auth_tokens")
+}
+
+// Sliding-window counter for login, registration, contact requests, reports, uploads.
+model RateLimitHit {
+  id        BigInt   @id @default(autoincrement())
+  key       String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([key, createdAt])
+  @@map("rate_limit_hits")
+}
+
+// ───────────────────────────── Agents & verification ─────────────────────────────
+
+enum VerificationStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model AgentProfile {
+  userId             String             @id @map("user_id")
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName        String?            @map("company_name")
+  licenseNumber      String?            @map("license_number")
+  businessPhone      String?            @map("business_phone")
+  businessEmail      String?            @map("business_email")
+  website            String?
+  about              String?
+  officeAddress      String?            @map("office_address")
+  verificationStatus VerificationStatus @default(NONE) @map("verification_status")
+  verifiedAt         DateTime?          @map("verified_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  @@index([verificationStatus])
+  @@map("agent_profiles")
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model VerificationRequest {
+  id           String       @id @default(cuid())
+  applicantId  String       @map("applicant_id")
+  applicant    User         @relation("VerificationApplicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  status       ReviewStatus @default(PENDING)
+  message      String? // what the agent submits (registry number, office, etc.)
+  documentKey  String?      @map("document_key")
+  reviewerId   String?      @map("reviewer_id")
+  reviewer     User?        @relation("VerificationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote   String?      @map("review_note")
+  reviewedAt   DateTime?    @map("reviewed_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([applicantId])
+  @@map("verification_requests")
+}
+
+// ───────────────────────────── Locations ─────────────────────────────
+
+model District {
+  id     String @id @default(cuid())
+  slug   String @unique
+  nameAz String @map("name_az")
+  nameTr String @map("name_tr")
+  nameRu String @map("name_ru")
+  nameEn String @map("name_en")
+  sortOrder Int @default(0) @map("sort_order")
+
+  neighborhoods Neighborhood[]
+  metroStations MetroStation[]
+  universities  University[]
+  listings      Listing[]
+  roommateAds   RoommateAd[]
+  preferredBy   RoommateAdDistrict[]
+
+  @@map("districts")
+}
+
+model Neighborhood {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  districtId String   @map("district_id")
+  district   District @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  nameAz     String   @map("name_az")
+  nameTr     String   @map("name_tr")
+  nameRu     String   @map("name_ru")
+  nameEn     String   @map("name_en")
+  // Shown on the homepage "popular areas" strip; set by admins.
+  isPopular  Boolean  @default(false) @map("is_popular")
+  latitude   Float?
+  longitude  Float?
+
+  listings    Listing[]
+  roommateAds RoommateAd[]
+
+  @@index([districtId])
+  @@map("neighborhoods")
+}
+
+enum MetroLine {
+  RED
+  GREEN
+  PURPLE
+}
+
+model MetroStation {
+  id         String    @id @default(cuid())
+  slug       String    @unique
+  line       MetroLine
+  districtId String?   @map("district_id")
+  district   District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  nameAz     String    @map("name_az")
+  nameTr     String    @map("name_tr")
+  nameRu     String    @map("name_ru")
+  nameEn     String    @map("name_en")
+  latitude   Float?
+  longitude  Float?
+
+  listings     Listing[]
+  roommateAds  RoommateAd[]
+  universities University[]
+
+  @@map("metro_stations")
+}
+
+model University {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  shortName      String        @map("short_name")
+  nameAz         String        @map("name_az")
+  nameTr         String        @map("name_tr")
+  nameRu         String        @map("name_ru")
+  nameEn         String        @map("name_en")
+  districtId     String?       @map("district_id")
+  district       District?     @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  nearestMetroId String?       @map("nearest_metro_id")
+  nearestMetro   MetroStation? @relation(fields: [nearestMetroId], references: [id], onDelete: SetNull)
+  latitude       Float?
+  longitude      Float?
+
+  listings      Listing[]
+  roommateAds   RoommateAd[]  @relation("RoommateUniversity")
+  profiles      UserProfile[]
+
+  @@map("universities")
+}
+
+model Amenity {
+  id     String @id @default(cuid())
+  key    String @unique
+  icon   String // lucide icon name
+  nameAz String @map("name_az")
+  nameTr String @map("name_tr")
+  nameRu String @map("name_ru")
+  nameEn String @map("name_en")
+  sortOrder Int @default(0) @map("sort_order")
+
+  listings ListingAmenity[]
+
+  @@map("amenities")
+}
+
+// ───────────────────────────── Listings ─────────────────────────────
+
+enum ListingCategory {
+  PRIVATE_ROOM
+  SHARED_APARTMENT
+  ENTIRE_APARTMENT
+  DORMITORY
+  FAMILY_APARTMENT
+}
+
+// The building itself; the rental arrangement is ListingCategory.
+enum PropertyType {
+  APARTMENT
+  HOUSE
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  RENTED
+  ARCHIVED
+}
+
+enum CommissionType {
+  NONE
+  PERCENT
+  FIXED
+}
+
+enum Furnishing {
+  FURNISHED
+  PARTLY
+  UNFURNISHED
+}
+
+enum UtilitiesMode {
+  INCLUDED
+  PARTLY
+  NOT_INCLUDED
+}
+
+enum Heating {
+  CENTRAL
+  COMBI
+  ELECTRIC
+  NONE
+}
+
+enum GenderPreference {
+  ANY
+  FEMALE
+  MALE
+}
+
+model Listing {
+  id             String          @id @default(cuid())
+  ownerId        String          @map("owner_id")
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  category       ListingCategory
+  propertyType   PropertyType    @default(APARTMENT) @map("property_type")
+  status         ListingStatus   @default(DRAFT)
+  rejectionReason String?        @map("rejection_reason")
+  originalLocale Locale          @default(az) @map("original_locale")
+  isDemo         Boolean         @default(false) @map("is_demo")
+
+  // Money: whole AZN, language independent.
+  monthlyRent     Int            @map("monthly_rent")
+  // For shared homes / rooms: price is per place (true) or for the whole unit.
+  pricePerPlace   Boolean        @default(false) @map("price_per_place")
+  deposit         Int?
+  commissionType  CommissionType @default(NONE) @map("commission_type")
+  commissionValue Int?           @map("commission_value")
+
+  districtId     String         @map("district_id")
+  district       District       @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  neighborhoodId String?        @map("neighborhood_id")
+  neighborhood   Neighborhood?  @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
+  metroStationId String?        @map("metro_station_id")
+  metroStation   MetroStation?  @relation(fields: [metroStationId], references: [id], onDelete: SetNull)
+  universityId   String?        @map("university_id")
+  university     University?    @relation(fields: [universityId], references: [id], onDelete: SetNull)
+  // Exact address is private: shown only to the owner and admins.
+  addressPrivate String?        @map("address_private")
+  // Public, generalized location ("Nərimanov, Təbriz küçəsi yaxınlığı").
+  addressPublic  String?        @map("address_public")
+  latitude       Float?
+  longitude      Float?
+
+  rooms           Int?
+  bathrooms       Int?
+  areaSqm         Int?             @map("area_sqm")
+  floor           Int?
+  totalFloors     Int?             @map("total_floors")
+  residentsCount  Int?             @map("residents_count")
+  availableSpaces Int?             @map("available_spaces")
+  furnishing      Furnishing       @default(FURNISHED)
+  utilities       UtilitiesMode    @default(NOT_INCLUDED)
+  internet        Boolean          @default(false)
+  heating         Heating          @default(CENTRAL)
+  airConditioning Boolean          @default(false) @map("air_conditioning")
+  genderPreference GenderPreference @default(ANY) @map("gender_preference")
+  availableFrom   DateTime         @map("available_from") @db.Date
+  minDurationMonths Int            @default(1) @map("min_duration_months")
+  videoUrl        String?          @map("video_url")
+
+  // Listing-level contact settings. The phone is never public: agents' numbers
+  // are revealed on click to signed-in users, owners' after they accept a request.
+  contactName       String?           @map("contact_name")
+  contactPhone      String?           @map("contact_phone")
+  contactWhatsapp   Boolean           @default(false) @map("contact_whatsapp")
+  contactPreference ContactPreference @default(IN_APP) @map("contact_preference")
+
+  // Set only by an admin after checking documents / visiting.
+  isVerified  Boolean   @default(false) @map("is_verified")
+  verifiedAt  DateTime? @map("verified_at")
+  submittedAt DateTime? @map("submitted_at")
+  publishedAt DateTime? @map("published_at")
+  expiresAt   DateTime? @map("expires_at")
+  rentedAt    DateTime? @map("rented_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  translations ListingTranslation[]
+  images       ListingImage[]
+  amenities    ListingAmenity[]
+  savedBy      SavedListing[]
+  contactRequests ContactRequest[]
+  reports      Report[]
+  featured     FeaturedListing[]
+  events       ListingEvent[]
+  roommateAds  RoommateAd[]
+
+  @@index([status, expiresAt, publishedAt])
+  @@index([status, category, monthlyRent])
+  @@index([districtId])
+  @@index([neighborhoodId])
+  @@index([metroStationId])
+  @@index([universityId])
+  @@index([ownerId, status])
+  @@index([availableFrom])
+  @@map("listings")
+}
+
+model ListingTranslation {
+  id           String  @id @default(cuid())
+  listingId    String  @map("listing_id")
+  listing      Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  locale       Locale
+  title        String
+  description  String
+  paymentTerms String? @map("payment_terms")
+  // House rules and other conditions (smoking, guests, quiet hours…).
+  rules        String?
+  // The language the owner wrote in.
+  isOriginal   Boolean @default(false) @map("is_original")
+  // Added by a translation provider, not reviewed by the owner.
+  isMachine    Boolean @default(false) @map("is_machine")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([listingId, locale])
+  @@map("listing_translations")
+}
+
+model ListingImage {
+  id         String   @id @default(cuid())
+  listingId  String   @map("listing_id")
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  storageKey String   @unique @map("storage_key")
+  url        String
+  width      Int
+  height     Int
+  sizeBytes  Int      @map("size_bytes")
+  mimeType   String   @map("mime_type")
+  position   Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, position])
+  @@map("listing_images")
+}
+
+model ListingAmenity {
+  listingId String  @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  amenityId String  @map("amenity_id")
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, amenityId])
+  @@index([amenityId])
+  @@map("listing_amenities")
+}
+
+enum ListingEventType {
+  VIEW // detail page opened (deduplicated per visitor, 6 h)
+  IMPRESSION // card shown in search results (deduplicated per visitor, 6 h)
+  SAVE
+  CONTACT_REQUEST
+  PHONE_REVEAL // agent phone number revealed (a click, not a contact)
+  WHATSAPP_CLICK // WhatsApp link opened (a click, not a contact)
+}
+
+// Real interaction events for agent analytics. No fabricated counters.
+model ListingEvent {
+  id        BigInt           @id @default(autoincrement())
+  listingId String           @map("listing_id")
+  listing   Listing          @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  type      ListingEventType
+  userId    String?          @map("user_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@index([listingId, type, createdAt])
+  @@map("listing_events")
+}
+
+model SavedListing {
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String   @map("listing_id")
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, listingId])
+  @@index([listingId])
+  @@map("saved_listings")
+}
+
+enum SearchKind {
+  LISTINGS
+  ROOMMATES
+}
+
+model SavedSearch {
+  id        String     @id @default(cuid())
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      SearchKind
+  name      String
+  query     String // URL query string, re-validated when used
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("saved_searches")
+}
+
+// ───────────────────────────── Roommates ─────────────────────────────
+
+enum RoommateAdType {
+  HAS_PLACE // I have a room/flat and need a roommate (scenario A)
+  SEEKING_PARTNER // looking for someone to rent with (scenario B)
+}
+
+enum RoommateAdStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  CLOSED // search completed
+  ARCHIVED
+}
+
+enum SmokingPolicy {
+  NO_SMOKING
+  OUTSIDE_ONLY
+  ALLOWED
+}
+
+enum CleaningStyle {
+  ROTA
+  EACH_OWN
+  HIRED_HELP
+  FLEXIBLE
+}
+
+enum SleepSchedule {
+  EARLY
+  LATE
+  FLEXIBLE
+}
+
+enum GuestsPolicy {
+  RARELY
+  SOMETIMES
+  OFTEN
+}
+
+enum ContactPreference {
+  IN_APP
+  PHONE
+  WHATSAPP
+}
+
+model RoommateAd {
+  id             String           @id @default(cuid())
+  ownerId        String           @map("owner_id")
+  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  type           RoommateAdType
+  status         RoommateAdStatus @default(DRAFT)
+  rejectionReason String?         @map("rejection_reason")
+  originalLocale Locale           @default(az) @map("original_locale")
+  isDemo         Boolean          @default(false) @map("is_demo")
+  title          String
+  description    String
+
+  // Scenario A (HAS_PLACE)
+  monthlyContribution Int?             @map("monthly_contribution")
+  accommodationType   ListingCategory? @map("accommodation_type")
+  currentResidents    Int?             @map("current_residents")
+  availableSpaces     Int?             @map("available_spaces")
+  districtId          String?          @map("district_id")
+  district            District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  neighborhoodId      String?          @map("neighborhood_id")
+  neighborhood        Neighborhood?    @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
+  metroStationId      String?          @map("metro_station_id")
+  metroStation        MetroStation?    @relation(fields: [metroStationId], references: [id], onDelete: SetNull)
+  listingId           String?          @map("listing_id")
+  listing             Listing?         @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  houseRules          String?          @map("house_rules")
+
+  // Scenario B (SEEKING_PARTNER)
+  budgetMin           Int?             @map("budget_min")
+  budgetMax           Int?             @map("budget_max")
+  desiredPropertyType ListingCategory? @map("desired_property_type")
+  groupSize           Int?             @map("group_size")
+  preferredDistricts  RoommateAdDistrict[]
+
+  // Shared
+  universityId      String?           @map("university_id")
+  university        University?       @relation("RoommateUniversity", fields: [universityId], references: [id], onDelete: SetNull)
+  moveInDate        DateTime          @map("move_in_date") @db.Date
+  durationMonths    Int               @map("duration_months")
+  genderPreference  GenderPreference  @default(ANY) @map("gender_preference")
+  smoking           SmokingPolicy     @default(NO_SMOKING)
+  cleaning          CleaningStyle     @default(ROTA)
+  sleepSchedule     SleepSchedule     @default(FLEXIBLE) @map("sleep_schedule")
+  guests            GuestsPolicy      @default(SOMETIMES)
+  petsOk            Boolean           @default(false) @map("pets_ok")
+  contactPreference ContactPreference @default(IN_APP) @map("contact_preference")
+
+  submittedAt DateTime? @map("submitted_at")
+  publishedAt DateTime? @map("published_at")
+  expiresAt   DateTime? @map("expires_at")
+  closedAt    DateTime? @map("closed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  contactRequests ContactRequest[]
+  reports         Report[]
+
+  @@index([status, expiresAt, type])
+  @@index([status, monthlyContribution])
+  @@index([status, budgetMax])
+  @@index([districtId])
+  @@index([universityId])
+  @@index([ownerId, status])
+  @@map("roommate_ads")
+}
+
+model RoommateAdDistrict {
+  roommateAdId String     @map("roommate_ad_id")
+  roommateAd   RoommateAd @relation(fields: [roommateAdId], references: [id], onDelete: Cascade)
+  districtId   String     @map("district_id")
+  district     District   @relation(fields: [districtId], references: [id], onDelete: Cascade)
+
+  @@id([roommateAdId, districtId])
+  @@index([districtId])
+  @@map("roommate_ad_districts")
+}
+
+// ───────────────────────────── Contact & moderation ─────────────────────────────
+
+enum ContactRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// The owner's / agent's own pipeline stage for an inquiry. Private to the recipient.
+enum LeadStatus {
+  NEW
+  CONTACTED
+  VIEWING_SCHEDULED
+  COMPLETED
+  CLOSED
+}
+
+// A message from one user to the owner of a listing or roommate ad. Contact
+// details are exchanged only after the recipient accepts.
+model ContactRequest {
+  id           String               @id @default(cuid())
+  senderId     String               @map("sender_id")
+  sender       User                 @relation("ContactSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId  String               @map("recipient_id")
+  recipient    User                 @relation("ContactRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  listingId    String?              @map("listing_id")
+  listing      Listing?             @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  roommateAdId String?              @map("roommate_ad_id")
+  roommateAd   RoommateAd?          @relation(fields: [roommateAdId], references: [id], onDelete: SetNull)
+  message      String
+  status       ContactRequestStatus @default(PENDING)
+  readAt       DateTime?            @map("read_at")
+  respondedAt  DateTime?            @map("responded_at")
+  createdAt    DateTime             @default(now()) @map("created_at")
+
+  // Recipient-only lead tracking (never shown to the sender).
+  leadStatus     LeadStatus @default(NEW) @map("lead_status")
+  ownerNote      String?    @map("owner_note")
+  viewingAt      DateTime?  @map("viewing_at")
+  leadUpdatedAt  DateTime?  @map("lead_updated_at")
+
+  @@index([recipientId, status, createdAt])
+  @@index([recipientId, leadStatus])
+  @@index([senderId, createdAt])
+  @@map("contact_requests")
+}
+
+enum ReportTarget {
+  LISTING
+  ROOMMATE_AD
+  USER
+}
+
+enum ReportReason {
+  FAKE
+  SCAM
+  WRONG_PRICE
+  ALREADY_RENTED
+  OFFENSIVE
+  DISCRIMINATION
+  SPAM
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String?      @map("reporter_id")
+  reporter       User?        @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  targetType     ReportTarget @map("target_type")
+  listingId      String?      @map("listing_id")
+  listing        Listing?     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  roommateAdId   String?      @map("roommate_ad_id")
+  roommateAd     RoommateAd?  @relation(fields: [roommateAdId], references: [id], onDelete: Cascade)
+  reportedUserId String?      @map("reported_user_id")
+  reportedUser   User?        @relation("ReportTargetUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reason         ReportReason
+  details        String?
+  status         ReportStatus @default(OPEN)
+  resolverId     String?      @map("resolver_id")
+  resolver       User?        @relation("ReportResolver", fields: [resolverId], references: [id], onDelete: SetNull)
+  resolution     String?
+  resolvedAt     DateTime?    @map("resolved_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@map("reports")
+}
+
+// ───────────────────────────── Packages & featured ─────────────────────────────
+
+model SubscriptionPackage {
+  id            String  @id @default(cuid())
+  code          String  @unique
+  nameAz        String  @map("name_az")
+  nameTr        String  @map("name_tr")
+  nameRu        String  @map("name_ru")
+  nameEn        String  @map("name_en")
+  priceAzn      Int     @map("price_azn")
+  durationDays  Int     @map("duration_days")
+  listingLimit  Int     @map("listing_limit")
+  featuredSlots Int     @map("featured_slots")
+  isActive      Boolean @default(true) @map("is_active")
+  sortOrder     Int     @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("subscription_packages")
+}
+
+enum SubscriptionStatus {
+  REQUESTED // agent asked; awaiting offline payment confirmation by an admin
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model Subscription {
+  id        String              @id @default(cuid())
+  userId    String              @map("user_id")
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  packageId String              @map("package_id")
+  package   SubscriptionPackage @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  status    SubscriptionStatus  @default(REQUESTED)
+  startsAt  DateTime?           @map("starts_at")
+  endsAt    DateTime?           @map("ends_at")
+  note      String?
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+enum FeaturedSource {
+  SUBSCRIPTION
+  ADMIN
+}
+
+model FeaturedListing {
+  id          String         @id @default(cuid())
+  listingId   String         @map("listing_id")
+  listing     Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  source      FeaturedSource
+  startsAt    DateTime       @map("starts_at")
+  endsAt      DateTime       @map("ends_at")
+  createdById String?        @map("created_by_id")
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  @@index([listingId, endsAt])
+  @@index([endsAt])
+  @@map("featured_listings")
+}
+
+// ───────────────────────────── System ─────────────────────────────
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    String?  @map("actor_id")
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+enum SupportStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+// Messages sent through the public contact form.
+model SupportMessage {
+  id        String        @id @default(cuid())
+  userId    String?       @map("user_id")
+  name      String
+  email     String
+  subject   String
+  message   String
+  locale    Locale
+  status    SupportStatus @default(OPEN)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@map("support_messages")
+}

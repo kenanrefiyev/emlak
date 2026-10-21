@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { IntlMessageFormat } from "intl-messageformat";
-import az from "../../messages/az.json";
-import tr from "../../messages/tr.json";
-import ru from "../../messages/ru.json";
-import en from "../../messages/en.json";
+import az from "../../frontend/messages/az.json";
+import tr from "../../frontend/messages/tr.json";
+import ru from "../../frontend/messages/ru.json";
+import en from "../../frontend/messages/en.json";
 import { withFallback } from "@/i18n/messages";
 import { isLocale, locales } from "@/i18n/routing";
 

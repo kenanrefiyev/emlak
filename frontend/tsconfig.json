@@ -1,0 +1,37 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/app/*": [
+        "./app/*"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@/i18n/*": [
+        "./i18n/*"
+      ],
+      "@/server/*": [
+        "../backend/server/*"
+      ],
+      "@/lib/*": [
+        "../backend/lib/*"
+      ],
+      "@/generated/*": [
+        "../backend/generated/*"
+      ]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "../backend/**/*.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "../backend/generated/**"
+  ]
+}
