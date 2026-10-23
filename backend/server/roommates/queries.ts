@@ -32,6 +32,7 @@ const cardSelect = {
   smoking: true,
   sleepSchedule: true,
   cleaning: true,
+  noise: true,
   districtId: true,
   publishedAt: true,
   district: { select: nameSelect },
@@ -54,6 +55,7 @@ export function toMatchable(r: Row | (Omit<Row, "preferredDistricts"> & { prefer
     districtId: r.districtId,
     preferredDistrictIds: r.preferredDistricts.map((p) => p.districtId),
     moveInDate: r.moveInDate,
+    durationMonths: r.durationMonths,
     accommodationType: r.accommodationType,
     desiredPropertyType: r.desiredPropertyType,
     availableSpaces: r.availableSpaces,
@@ -61,6 +63,7 @@ export function toMatchable(r: Row | (Omit<Row, "preferredDistricts"> & { prefer
     smoking: r.smoking,
     sleepSchedule: r.sleepSchedule,
     cleaning: r.cleaning,
+    noise: r.noise,
   };
 }
 

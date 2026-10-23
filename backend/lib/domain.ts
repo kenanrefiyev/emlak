@@ -64,3 +64,11 @@ export const PRICE_MAX = 20000;
 export const SPOKEN_LANGUAGES = ["az", "tr", "ru", "en", "de", "fr", "ar", "fa"] as const;
 
 export const PROPERTY_TYPES = ["APARTMENT", "HOUSE"] as const;
+
+/** Owner-reported availability of a published listing (moderation status is separate). */
+export const AVAILABILITY = ["AVAILABLE", "TEMPORARILY_UNAVAILABLE", "RESERVED"] as const;
+export type Availability = (typeof AVAILABILITY)[number];
+/** A live listing whose availability was last confirmed longer ago than this is flagged for re-confirmation. */
+export const CONFIRM_STALE_DAYS = 14;
+
+export const NOISE = ["QUIET", "MODERATE", "LIVELY"] as const;

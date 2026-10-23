@@ -166,8 +166,12 @@ export default async function DashboardListings({ params, searchParams }: Props)
             expiresLabel: l.expiresAt ? formatDate(l.expiresAt, locale) : null,
             featuredUntil: l.featuredUntil?.toISOString() ?? null,
             views: l.views,
+            saves: l.saves,
             inquiries: l.inquiries,
             isVerified: l.isVerified,
+            availability: l.availability,
+            confirmedLabel: l.availabilityConfirmedAt ? formatDate(l.availabilityConfirmedAt, locale) : null,
+            needsConfirmation: l.needsConfirmation,
           }))}
         />
       )}

@@ -3,7 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { BadgeCheck, Eye, ImageOff, MessageSquare, Pencil, Star } from "lucide-react";
+import { BadgeCheck, CalendarCheck, Eye, Heart, ImageOff, MessageSquare, Pencil, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { ActionState } from "@/server/errors";
 import { ConfirmDialog, OpButton } from "@/components/account/op-button";
@@ -11,6 +11,7 @@ import { listingOpAction } from "@/app/[locale]/account/actions";
 import { featureListingAction } from "@/app/[locale]/agent/actions";
 import { bulkListingAction } from "@/app/[locale]/dashboard/actions";
 import { ListingStatusBadge } from "./lead-badge";
+import { AvailabilitySelect } from "./availability-select";
 
 export interface BoardItem {
   id: string;
@@ -27,17 +28,22 @@ export interface BoardItem {
   expiresLabel: string | null;
   featuredUntil: string | null;
   views: number;
+  saves: number;
   inquiries: number;
   isVerified: boolean;
+  availability: string;
+  /** Formatted on the server; null when never confirmed. */
+  confirmedLabel: string | null;
+  needsConfirmation: boolean;
 }
 
-type BulkOp = "submit" | "renew" | "rented" | "archive" | "delete";
+type BulkOp = "submit" | "reconfirm" | "renew" | "rented" | "archive" | "delete";
 
 /** Which single and bulk actions make sense for an owner-facing status. */
 const OPS_FOR: Record<string, BulkOp[]> = {
   DRAFT: ["submit", "delete"],
   PENDING_REVIEW: ["archive", "delete"],
-  ACTIVE: ["rented", "renew", "archive", "delete"],
+  ACTIVE: ["reconfirm", "rented", "renew", "archive", "delete"],
   EXPIRED: ["renew", "archive", "delete"],
   REJECTED: ["submit", "delete"],
   RENTED: ["renew", "delete"],
@@ -62,7 +68,7 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
   const allSelected = items.length > 0 && items.every((i) => selected.has(i.id));
   const selectedItems = items.filter((i) => selected.has(i.id));
   // A bulk action is offered when at least one selected listing allows it.
-  const bulkOps = (["submit", "renew", "rented", "archive", "delete"] as const).filter((op) => selectedItems.some((i) => OPS_FOR[i.status]?.includes(op)));
+  const bulkOps = (["submit", "reconfirm", "renew", "rented", "archive", "delete"] as const).filter((op) => selectedItems.some((i) => OPS_FOR[i.status]?.includes(op)));
 
   const runBulk = (op: BulkOp) => {
     const fd = new FormData();
@@ -86,6 +92,9 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
           {t("actions.preview")}
         </Link>
         {ops.includes("submit") && <OpButton action={listingOpAction} id={l.id} op="submit" label={t("actions.submit")} variant="primary" />}
+        {ops.includes("reconfirm") && (
+          <OpButton action={listingOpAction} id={l.id} op="reconfirm" label={t("actions.reconfirm")} variant={l.needsConfirmation ? "primary" : undefined} />
+        )}
         {ops.includes("rented") && <OpButton action={listingOpAction} id={l.id} op="rented" label={t("actions.rented")} confirm={t("confirm.rented")} />}
         {ops.includes("renew") && <OpButton action={listingOpAction} id={l.id} op="renew" label={expiredOrOff ? t("actions.relist") : t("actions.renew")} />}
         {canFeature && l.status === "ACTIVE" && !l.featuredUntil && <OpButton action={featureListingAction} id={l.id} op="feature" label={t("actions.feature")} variant="dark" confirm={t("confirm.feature")} />}
@@ -102,6 +111,11 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
         <span className="sr-only">{t("columns.views")}:</span>
         {l.views}
       </span>
+      <span className="inline-flex items-center gap-1" title={t("columns.saves")}>
+        <Heart className="size-3.5" aria-hidden />
+        <span className="sr-only">{t("columns.saves")}:</span>
+        {l.saves}
+      </span>
       <span className="inline-flex items-center gap-1" title={t("columns.inquiries")}>
         <MessageSquare className="size-3.5" aria-hidden />
         <span className="sr-only">{t("columns.inquiries")}:</span>
@@ -109,6 +123,20 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
       </span>
     </>
   );
+
+  /** Availability control and the last confirmation, for listings that can be live. */
+  const availability = (l: BoardItem) =>
+    ["ACTIVE", "PENDING_REVIEW", "DRAFT"].includes(l.status) && (
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <AvailabilitySelect id={l.id} value={l.availability} />
+        {l.status === "ACTIVE" && (
+          <span className={`inline-flex items-center gap-1 text-xs ${l.needsConfirmation ? "font-semibold text-warn" : "text-ink-3"}`}>
+            <CalendarCheck className="size-3.5" aria-hidden />
+            {l.needsConfirmation ? t("needsConfirmation") : t("confirmedOn", { date: l.confirmedLabel ?? "—" })}
+          </span>
+        )}
+      </div>
+    );
 
   const checkbox = (l: BoardItem) =>
     bulk && (
@@ -203,6 +231,7 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
                 <th className="px-3 py-3 font-medium">{t("columns.status")}</th>
                 <th className="px-3 py-3 text-right font-medium">{t("columns.price")}</th>
                 <th className="px-3 py-3 text-right font-medium">{t("columns.views")}</th>
+                <th className="px-3 py-3 text-right font-medium">{t("columns.saves")}</th>
                 <th className="px-3 py-3 text-right font-medium">{t("columns.inquiries")}</th>
                 <th className="px-3 py-3 font-medium">{t("columns.dates")}</th>
               </tr>
@@ -221,6 +250,7 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
                         <p className="text-xs text-ink-2">
                           {l.category} · {l.area}
                         </p>
+                        {availability(l)}
                         <div className="mt-2">{actions(l)}</div>
                       </div>
                     </div>
@@ -231,6 +261,7 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
                   </td>
                   <td className="px-3 py-3 text-right font-semibold tabular-nums whitespace-nowrap">{l.price}</td>
                   <td className="px-3 py-3 text-right tabular-nums">{l.views}</td>
+                  <td className="px-3 py-3 text-right tabular-nums">{l.saves}</td>
                   <td className="px-3 py-3 text-right tabular-nums">{l.inquiries}</td>
                   <td className="px-3 py-3 text-xs whitespace-nowrap text-ink-2">
                     <p>{t("createdOn", { date: l.createdLabel })}</p>
@@ -274,6 +305,7 @@ export function ListingsBoard({ items, view, bulk, canFeature }: { items: BoardI
                   {l.imageCount === 0 && <span className="ml-1 font-medium text-warn">· {t("noPhotos")}</span>}
                 </p>
                 {l.rejectionReason && l.status === "REJECTED" && <p className="mt-1 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{l.rejectionReason}</p>}
+                {availability(l)}
                 <div className="mt-3">{actions(l)}</div>
               </div>
             </li>

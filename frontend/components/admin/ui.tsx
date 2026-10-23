@@ -12,6 +12,12 @@ export const LISTING_STATUS_AZ: Record<string, string> = {
   EXPIRED: "Müddəti bitib",
 };
 
+export const AVAILABILITY_AZ: Record<string, string> = {
+  AVAILABLE: "Boşdur",
+  TEMPORARILY_UNAVAILABLE: "Müvəqqəti əlçatan deyil",
+  RESERVED: "Rezerv olunub",
+};
+
 export const CATEGORY_AZ: Record<string, string> = {
   PRIVATE_ROOM: "Ayrıca otaq",
   SHARED_APARTMENT: "Ortaq ev",

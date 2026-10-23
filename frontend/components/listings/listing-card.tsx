@@ -28,10 +28,11 @@ export async function ListingCard({
   layout?: "grid" | "list";
   priority?: boolean;
 }) {
-  const [c, cat, card] = await Promise.all([
+  const [c, cat, card, e] = await Promise.all([
     getTranslations({ locale, namespace: "common" }),
     getTranslations({ locale, namespace: "categories" }),
     getTranslations({ locale, namespace: "card" }),
+    getTranslations({ locale, namespace: "enums" }),
   ]);
   const shared = SHARED_CATEGORIES.includes(l.category);
   const list = layout === "list";
@@ -67,6 +68,7 @@ export async function ListingCard({
         <ul className="absolute top-4 left-4 flex flex-wrap gap-1.5">
           {l.isFeatured && <li className="flag !bg-brand">{c("featured")}</li>}
           <li className="flag">{cat(l.category)}</li>
+          {l.availability !== "AVAILABLE" && <li className="flag !bg-warn !text-white">{e(`availability.${l.availability}`)}</li>}
           {l.isDemo && (
             <li className="flag !bg-white/90 !text-ink" title={c("demoHint")}>
               {c("demo")}
@@ -118,6 +120,11 @@ export async function ListingCard({
               <span className="text-sm font-normal text-ink-2">{c("perMonth")}</span>
             </span>
             <span className="block text-xs text-ink-2">{l.pricePerPlace ? c("perPlace") : c("wholeUnit")}</span>
+            {l.monthlyTotal.complete && l.monthlyTotal.value > l.monthlyRent ? (
+              <span className="block text-xs font-medium text-ink">{card("totalWithCosts", { total: formatAzn(l.monthlyTotal.value, locale) })}</span>
+            ) : l.utilities === "INCLUDED" ? (
+              <span className="block text-xs font-medium text-ok">{card("utilitiesIncluded")}</span>
+            ) : null}
           </span>
         </div>
         </div>

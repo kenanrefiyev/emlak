@@ -66,6 +66,8 @@ model User {
   verificationRevs VerificationRequest[] @relation("VerificationReviewer")
   subscriptions    Subscription[]
   auditLogs        AuditLog[]
+  savedRoommateAds SavedRoommateAd[]
+  notifications    Notification[]
   featuredCreated  FeaturedListing[]
 
   @@index([role, status])
@@ -336,6 +338,14 @@ enum UtilitiesMode {
   NOT_INCLUDED
 }
 
+// Owner-reported, independent of moderation: a published listing can be
+// temporarily off or reserved without going back to review.
+enum ListingAvailability {
+  AVAILABLE
+  TEMPORARILY_UNAVAILABLE
+  RESERVED
+}
+
 enum Heating {
   CENTRAL
   COMBI
@@ -367,6 +377,14 @@ model Listing {
   deposit         Int?
   commissionType  CommissionType @default(NONE) @map("commission_type")
   commissionValue Int?           @map("commission_value")
+  // Monthly running costs in AZN for the whole home. null = not stated (shown
+  // as unknown, never treated as 0); 0 = none / included.
+  utilitiesCost   Int?           @map("utilities_cost")
+  internetCost    Int?           @map("internet_cost")
+  otherCosts      Int?           @map("other_costs")
+  otherCostsNote  String?        @map("other_costs_note")
+  // People the running costs above are split between (for per-person estimates).
+  costSharers     Int?           @map("cost_sharers")
 
   districtId     String         @map("district_id")
   district       District       @relation(fields: [districtId], references: [id], onDelete: Restrict)
@@ -406,6 +424,10 @@ model Listing {
   contactPhone      String?           @map("contact_phone")
   contactWhatsapp   Boolean           @default(false) @map("contact_whatsapp")
   contactPreference ContactPreference @default(IN_APP) @map("contact_preference")
+
+  availability            ListingAvailability @default(AVAILABLE)
+  // Last time the owner explicitly confirmed the listing is still current.
+  availabilityConfirmedAt DateTime?           @map("availability_confirmed_at")
 
   // Set only by an admin after checking documents / visiting.
   isVerified  Boolean   @default(false) @map("is_verified")
@@ -579,6 +601,12 @@ enum GuestsPolicy {
   OFTEN
 }
 
+enum NoiseLevel {
+  QUIET
+  MODERATE
+  LIVELY
+}
+
 enum ContactPreference {
   IN_APP
   PHONE
@@ -625,11 +653,15 @@ model RoommateAd {
   moveInDate        DateTime          @map("move_in_date") @db.Date
   durationMonths    Int               @map("duration_months")
   genderPreference  GenderPreference  @default(ANY) @map("gender_preference")
-  smoking           SmokingPolicy     @default(NO_SMOKING)
-  cleaning          CleaningStyle     @default(ROTA)
-  sleepSchedule     SleepSchedule     @default(FLEXIBLE) @map("sleep_schedule")
-  guests            GuestsPolicy      @default(SOMETIMES)
+  // Lifestyle answers are optional: null = "prefer not to say", skipped by matching.
+  smoking           SmokingPolicy?
+  cleaning          CleaningStyle?
+  sleepSchedule     SleepSchedule?    @map("sleep_schedule")
+  guests            GuestsPolicy?
+  noise             NoiseLevel?
   petsOk            Boolean           @default(false) @map("pets_ok")
+  // Whether the author's profile (university, study year, hometown, bio) is shown on the ad.
+  showProfile       Boolean           @default(true) @map("show_profile")
   contactPreference ContactPreference @default(IN_APP) @map("contact_preference")
 
   submittedAt DateTime? @map("submitted_at")
@@ -641,6 +673,7 @@ model RoommateAd {
 
   contactRequests ContactRequest[]
   reports         Report[]
+  savedBy         SavedRoommateAd[]
 
   @@index([status, expiresAt, type])
   @@index([status, monthlyContribution])
@@ -660,6 +693,18 @@ model RoommateAdDistrict {
   @@id([roommateAdId, districtId])
   @@index([districtId])
   @@map("roommate_ad_districts")
+}
+
+model SavedRoommateAd {
+  userId       String     @map("user_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roommateAdId String     @map("roommate_ad_id")
+  roommateAd   RoommateAd @relation(fields: [roommateAdId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@id([userId, roommateAdId])
+  @@index([roommateAdId])
+  @@map("saved_roommate_ads")
 }
 
 // ───────────────────────────── Contact & moderation ─────────────────────────────
@@ -847,6 +892,31 @@ model SystemSetting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+enum NotificationType {
+  INQUIRY_RECEIVED
+  INQUIRY_ACCEPTED
+  INQUIRY_DECLINED
+  SEARCH_MATCH
+}
+
+// In-app notifications (no push). Text is rendered from `type` + `data` in the
+// reader's language; `dedupeKey` makes repeated triggers a no-op.
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  data      Json?
+  href      String
+  dedupeKey String           @map("dedupe_key")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
 }
 
 enum SupportStatus {

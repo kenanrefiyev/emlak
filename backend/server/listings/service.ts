@@ -2,10 +2,11 @@ import "server-only";
 import { db } from "@/server/db";
 import { ServiceError } from "@/server/errors";
 import { audit } from "@/server/audit";
+import { notifySearchMatches } from "@/server/notifications";
 import { getSettings } from "@/server/settings";
 import { storage } from "@/server/storage/driver";
 import { objectKey, processImage } from "@/server/storage/images";
-import { MAX_IMAGES } from "@/lib/domain";
+import { AVAILABILITY, CONFIRM_STALE_DAYS, MAX_IMAGES, type Availability } from "@/lib/domain";
 import { universityNearness } from "@/lib/baku-geo";
 import { listingInputSchema, normalizeListingInput, type ListingInput } from "@/lib/validation/listing";
 import { fieldErrorsOf } from "@/lib/validation/helpers";
@@ -190,10 +191,36 @@ export async function submitListing(actor: Actor, id: string) {
   if (!["DRAFT", "REJECTED"].includes(listing.status)) throw new ServiceError("bad_status");
   if (listing._count.images === 0) throw new ServiceError("needs_image");
   await assertQuota(actor, id);
+  // Submitting is the owner saying the listing is current.
   await db.listing.update({
     where: { id },
-    data: { status: "PENDING_REVIEW", submittedAt: new Date(), rejectionReason: null },
+    data: { status: "PENDING_REVIEW", submittedAt: new Date(), rejectionReason: null, availabilityConfirmedAt: new Date() },
   });
+}
+
+/**
+ * Owner-reported availability (available / temporarily unavailable / reserved).
+ * Unlike an edit it does not send the listing back to moderation, and it
+ * counts as a fresh confirmation.
+ */
+export async function setListingAvailability(actor: Actor, id: string, availability: Availability) {
+  if (!AVAILABILITY.includes(availability)) throw new ServiceError("validation", { availability: "choice" });
+  const listing = await loadOwned(actor, id);
+  if (!["DRAFT", "PENDING_REVIEW", "PUBLISHED"].includes(listing.status)) throw new ServiceError("bad_status");
+  await db.listing.update({ where: { id }, data: { availability, availabilityConfirmedAt: new Date() } });
+}
+
+/** "Still available" — refreshes the confirmation date shown on the listing. */
+export async function confirmListingAvailability(actor: Actor, id: string) {
+  const listing = await loadOwned(actor, id);
+  if (listing.status !== "PUBLISHED") throw new ServiceError("bad_status");
+  await db.listing.update({ where: { id }, data: { availabilityConfirmedAt: new Date() } });
+}
+
+/** A live listing not confirmed (or published) within CONFIRM_STALE_DAYS should be re-confirmed. */
+export function needsConfirmation(l: { availabilityConfirmedAt: Date | null; publishedAt: Date | null }, now = new Date()) {
+  const last = l.availabilityConfirmedAt ?? l.publishedAt;
+  return !last || now.getTime() - last.getTime() > CONFIRM_STALE_DAYS * 86_400_000;
 }
 
 export async function markRented(actor: Actor, id: string) {
@@ -220,7 +247,7 @@ export async function renewListing(actor: Actor, id: string) {
   const now = new Date();
   const live = listing.status === "PUBLISHED" && listing.expiresAt && listing.expiresAt > now;
   if (live) {
-    await db.listing.update({ where: { id }, data: { expiresAt: new Date(now.getTime() + settings.listingTtlDays * 86_400_000) } });
+    await db.listing.update({ where: { id }, data: { expiresAt: new Date(now.getTime() + settings.listingTtlDays * 86_400_000), availabilityConfirmedAt: now } });
     return { requeued: false };
   }
   if (!["PUBLISHED", "RENTED", "ARCHIVED"].includes(listing.status)) throw new ServiceError("bad_status");
@@ -228,7 +255,7 @@ export async function renewListing(actor: Actor, id: string) {
   await assertQuota(actor, id);
   await db.listing.update({
     where: { id },
-    data: { status: "PENDING_REVIEW", submittedAt: now, rentedAt: null, rejectionReason: null },
+    data: { status: "PENDING_REVIEW", submittedAt: now, rentedAt: null, rejectionReason: null, availability: "AVAILABLE", availabilityConfirmedAt: now },
   });
   return { requeued: true };
 }
@@ -322,6 +349,8 @@ export async function moderateListing(admin: Actor, id: string, decision: "appro
     }
     await audit(admin.id, `listing.${decision}`, "listing", id, { from: listing.status, reason: reason ?? null }, tx);
   });
+  // Saved-search alerts must never make moderation fail.
+  if (decision === "approve") await notifySearchMatches(id).catch(() => undefined);
 }
 
 export async function setListingVerified(admin: Actor, id: string, verified: boolean) {

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
 import { requireUser } from "@/server/auth/current";
 import { db } from "@/server/db";
+import { unreadNotificationCount } from "@/server/notifications";
 import { SideNav } from "@/components/account/side-nav";
 import { VerifyBanner } from "@/components/account/verify-banner";
 import { Link } from "@/i18n/navigation";
@@ -13,16 +14,18 @@ export default async function AccountLayout({ children, params }: { children: Re
   const locale = (await params).locale as AppLocale;
   setRequestLocale(locale);
   const user = await requireUser(locale, `/${locale}/account`);
-  const [t, nav, pending] = await Promise.all([
+  const [t, nav, pending, unread] = await Promise.all([
     getTranslations({ locale, namespace: "account" }),
     getTranslations({ locale, namespace: "nav" }),
     db.contactRequest.count({ where: { recipientId: user.id, status: "PENDING" } }),
+    unreadNotificationCount(user.id),
   ]);
   const items = [
     { href: "/account", label: t("nav.overview") },
     { href: "/dashboard", label: t("nav.dashboard") },
     { href: "/account/roommates", label: t("nav.roommates") },
     { href: "/account/saved", label: t("nav.saved") },
+    { href: "/account/notifications", label: t("nav.notifications"), badge: unread },
     { href: "/account/requests", label: t("nav.requests"), badge: pending },
     { href: "/account/searches", label: t("nav.searches") },
     { href: "/account/profile", label: t("nav.profile") },

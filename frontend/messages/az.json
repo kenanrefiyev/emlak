@@ -35,7 +35,9 @@
     "closeMenu": "Menyunu bağla",
     "language": "Dil",
     "skipToContent": "Məzmuna keç",
-    "mainNav": "Əsas naviqasiya"
+    "mainNav": "Əsas naviqasiya",
+    "notifications": "Bildirişlər",
+    "notificationsCount": "{count, plural, one {Bildirişlər: # yeni} other {Bildirişlər: # yeni}}"
   },
   "common": {
     "search": "Axtar",
@@ -235,6 +237,16 @@
       "OWNER": "Ev sahibi",
       "AGENT": "Makler",
       "ADMIN": "Administrator"
+    },
+    "availability": {
+      "AVAILABLE": "Boşdur",
+      "TEMPORARILY_UNAVAILABLE": "Müvəqqəti əlçatan deyil",
+      "RESERVED": "Rezerv olunub"
+    },
+    "noise": {
+      "QUIET": "Sakit ev istəyirəm",
+      "MODERATE": "Orta səviyyə normaldır",
+      "LIVELY": "Səs-küy məni narahat etmir"
     }
   },
   "home": {
@@ -381,7 +393,15 @@
     "saveSearchName": "Axtarışın adı",
     "saveSearchDone": "Axtarış yadda saxlandı",
     "loginToSave": "Axtarışı saxlamaq üçün daxil olun",
-    "perPlaceNote": "Bəzi qiymətlər bir yer üçündür, bəziləri bütün mənzil üçün — kartda göstərilir."
+    "perPlaceNote": "Bəzi qiymətlər bir yer üçündür, bəziləri bütün mənzil üçün — kartda göstərilir.",
+    "utilities": "Kommunal xərclər",
+    "utilitiesExcluded": "Kommunal ayrıca ödənilir",
+    "availableOnly": "Yalnız hazırda boş olanlar",
+    "verifiedOwner": "Yalnız təsdiqlənmiş ev sahibi / makler",
+    "viewMap": "Xəritə",
+    "mapOpen": "Elana bax",
+    "mapNote": "Xəritədə ünvan yox, təxmini ərazi göstərilir (metro stansiyası, məhəllə və ya rayon mərkəzi).",
+    "mapCapped": "Xəritədə ilk {count} elan göstərilir — daha dəqiq nəticə üçün filtrləri daraldın."
   },
   "card": {
     "save": "Seçilmişlərə əlavə et",
@@ -397,7 +417,9 @@
     "metaArea": "Sahə",
     "metaSpaces": "Boş yer",
     "metaResidents": "Evdə",
-    "metaUni": "Univ."
+    "metaUni": "Univ.",
+    "totalWithCosts": "Xərclərlə ≈ {total}/ay",
+    "utilitiesIncluded": "Kommunal daxildir"
   },
   "listing": {
     "breadcrumbs": "Naviqasiya izi",
@@ -470,7 +492,13 @@
     "features": "Xüsusiyyətlər",
     "address": "Ünvan",
     "rules": "Qaydalar və şərtlər",
-    "verifiedLandlord": "Təsdiqlənmiş ev sahibi"
+    "verifiedLandlord": "Təsdiqlənmiş ev sahibi",
+    "costsTitle": "Ümumi kirayə xərci",
+    "depositUnknown": "Məlum deyil",
+    "lastUpdated": "Son yenilənmə: {date}",
+    "availabilityConfirmed": "Boş olduğu təsdiqlənib: {date}",
+    "availabilityNotConfirmed": "Boş olduğu hələ təsdiqlənməyib",
+    "otherUniversities": "Yaxındakı universitetlər"
   },
   "roommates": {
     "heading": "Ev yoldaşı tap",
@@ -519,7 +547,7 @@
     "match": "{score}% uyğun",
     "matchTitle": "Uyğunluq: {score}%",
     "matchExplain": "Sizin aktiv elanınızla müqayisədə hesablanıb.",
-    "matchDisclaimer": "Uyğunluq faizi yalnız büdcə, ərazi, tarix, ev növü və məişət vərdişlərini müqayisə edir. İnsanların bir-biri ilə yola gedəcəyini təxmin etmir.",
+    "matchDisclaimer": "Uyğunluq faizi yalnız büdcə, ərazi, köçmə tarixi, qalma müddəti, ev növü və məişət vərdişlərini müqayisə edir. İnsanların bir-biri ilə yola gedəcəyini təxmin etmir.",
     "matchHowLink": "Necə hesablanır?",
     "matchNeedAd": "Uyğunluq faizini görmək üçün öz ev yoldaşı elanınızı yerləşdirin.",
     "reasons": {
@@ -532,10 +560,21 @@
       "spaces": "Yer kifayət edir",
       "smoking": "Siqaret baxımından uyğun",
       "sleep": "Yuxu rejimi uyğun",
-      "cleaning": "Təmizlik yanaşması uyğun"
+      "cleaning": "Təmizlik yanaşması uyğun",
+      "duration": "Qalma müddəti uyğundur",
+      "durationNear": "Qalma müddəti təxminən uyğundur",
+      "noise": "Səs-küy gözləntisi uyğundur"
     },
     "posted": "{date}",
-    "originalLanguage": "Elan {language} yazılıb."
+    "originalLanguage": "Elan {language} yazılıb.",
+    "notSpecified": "Göstərilməyib",
+    "noise": "Səs-küy",
+    "matchHowTitle": "Faiz necə hesablanır?",
+    "matchHow": "Büdcə 30 bal, ərazi 20, köçmə tarixi 15, qalma müddəti 10, ev növü və yer sayı 10, məişət vərdişləri 15 bal (siqaret, yuxu, təmizlik, səs-küy — yalnız hər iki tərəf cavab veribsə). Cavab verilməyən suallar bal gətirmir və uyğunsuzluq sayılmır.",
+    "profileHiddenNote": "Profil məlumatlarınız (universitet, kurs, şəhər, haqqımda) bu elanda başqalarına göstərilmir.",
+    "saveProfile": "Profili yadda saxla",
+    "unsaveProfile": "Yadda saxlanılıb",
+    "saveFailed": "Yadda saxlamaq alınmadı — yenidən cəhd edin."
   },
   "roommateForm": {
     "titleNew": "Ev yoldaşı elanı",
@@ -578,7 +617,12 @@
     "submit": "Moderasiyaya göndər",
     "submitEdit": "Yadda saxla və yoxlamaya göndər",
     "created": "Elanınız moderasiyaya göndərildi. Təsdiqdən sonra dərc olunacaq.",
-    "updated": "Dəyişikliklər saxlanıldı. Elan yenidən yoxlamaya göndərildi."
+    "updated": "Dəyişikliklər saxlanıldı. Elan yenidən yoxlamaya göndərildi.",
+    "notSaying": "Göstərmək istəmirəm",
+    "lifestyleOptional": "Bu suallar könüllüdür. Cavab vermədiyiniz suallar uyğunluq hesablamasında nəzərə alınmır.",
+    "sectionPrivacy": "Məxfilik",
+    "showProfile": "Profil məlumatlarımı elanda göstər",
+    "showProfileHint": "Universitet, kurs, gəldiyiniz şəhər və \"haqqımda\" mətni. Telefon nömrəsi heç vaxt elanda göstərilmir."
   },
   "listingForm": {
     "titleNew": "Kirayə elanı yerləşdir",
@@ -717,7 +761,8 @@
       "searches": "Saxlanılmış axtarışlar",
       "profile": "Profil",
       "security": "Təhlükəsizlik",
-      "dashboard": "Elan paneli"
+      "dashboard": "Elan paneli",
+      "notifications": "Bildirişlər"
     },
     "overviewListings": "Kirayə elanları",
     "overviewRoommates": "Ev yoldaşı elanları",
@@ -792,7 +837,8 @@
     "deleteAccountConfirm": "Təsdiq üçün şifrənizi yazın",
     "emailUnverified": "Təsdiqlənməyib",
     "emailVerified": "Təsdiqlənib",
-    "role": "Hesab növü"
+    "role": "Hesab növü",
+    "savedRoommates": "Seçilmiş ev yoldaşı profilləri"
   },
   "agent": {
     "title": "Makler paneli",
@@ -1262,7 +1308,8 @@
       "relist": "Yenidən yerləşdir",
       "feature": "VIP et",
       "deactivate": "Deaktiv et",
-      "delete": "Sil"
+      "delete": "Sil",
+      "reconfirm": "Hələ boşdur"
     },
     "confirm": {
       "rented": "Elan «kirayə verilib» kimi işarələnsin? Axtarışdan çıxacaq, istəsəniz sonra yenidən yerləşdirə bilərsiniz.",
@@ -1276,7 +1323,8 @@
       "price": "Qiymət",
       "views": "Baxış",
       "inquiries": "Sorğu",
-      "dates": "Tarixlər"
+      "dates": "Tarixlər",
+      "saves": "Seçilmə"
     },
     "select": "Seç: {title}",
     "bulk": {
@@ -1293,8 +1341,10 @@
         "renew": "{count, plural, one {# elanın} other {# elanın}} müddəti uzadılsın?",
         "rented": "{count, plural, one {# elan} other {# elan}} «kirayə verilib» kimi işarələnsin?",
         "archive": "{count, plural, one {# elan} other {# elan}} deaktiv edilsin?",
-        "delete": "{count, plural, one {# elan} other {# elan}} birdəfəlik silinəcək. Bunu geri qaytarmaq olmur."
-      }
+        "delete": "{count, plural, one {# elan} other {# elan}} birdəfəlik silinəcək. Bunu geri qaytarmaq olmur.",
+        "reconfirm": "{count, plural, one {# elanın} other {# elanın}} hələ boş olduğu təsdiqlənsin?"
+      },
+      "reconfirm": "Boş olduğunu təsdiqlə"
     },
     "verifiedListing": "Yoxlanılıb",
     "noPhotos": "şəkil yoxdur",
@@ -1374,7 +1424,18 @@
       "statusNote": "Elanın vəziyyətini «Elanlarım» bölməsindən dəyişə bilərsiniz.",
       "openPublicPreview": "İctimai səhifəni yeni pəncərədə aç",
       "draftFound": "Bu cihazda yarımçıq qalmış elan qaralaması var.",
-      "restoreDraft": "Qaralamanı bərpa et"
+      "restoreDraft": "Qaralamanı bərpa et",
+      "depositHint": "Boş saxlasanız \"məlum deyil\" göstərilir. Depozit yoxdursa 0 yazın.",
+      "costsTitle": "Aylıq əlavə xərclər",
+      "costsLead": "Tələbələr ümumi xərci görsün deyə doldurun. Boş saxlanan xana elanda \"Məlum deyil\" kimi göstərilir; xərc yoxdursa 0 yazın.",
+      "utilitiesCost": "Kommunal (təxmini, ₼/ay)",
+      "utilitiesCostHint": "Bütün ev üçün. Kommunal kirayəyə daxildirsə boş saxlayın.",
+      "internetCost": "İnternet (₼/ay)",
+      "otherCosts": "Digər aylıq xərclər (₼)",
+      "otherCostsNote": "Digər xərclər nədir?",
+      "otherCostsNotePlaceholder": "məs. bina xidməti, lift",
+      "costSharers": "Xərclər neçə nəfərə bölünür?",
+      "costSharersHint": "Nəfərə düşən payı hesablamaq üçün. Məlum deyilsə boş saxlayın."
     },
     "inquiries": {
       "leadLandlord": "Elanlarınıza gələn sorğular. Statusu və qeydləri yalnız siz görürsünüz.",
@@ -1531,6 +1592,48 @@
       "status": "Status",
       "period": "Dövr",
       "price": "Qiymət"
-    }
+    },
+    "staleTitle": "{count, plural, one {# elan təsdiq gözləyir} other {# elan təsdiq gözləyir}}",
+    "staleLead": "Bu elanların hələ boş olduğunu 14 gündən çoxdur təsdiqləməmisiniz. Tələbələr köhnə elanlara vaxt itirməsin deyə təsdiqləyin və ya \"kirayə verildi\" kimi işarələyin.",
+    "confirmedOn": "Təsdiqlənib: {date}",
+    "needsConfirmation": "Boş olduğunu təsdiqləyin",
+    "availabilityLabel": "Vəziyyət:",
+    "availabilitySaved": "Yadda saxlanıldı"
+  },
+  "costs": {
+    "monthlyTitle": "Aylıq xərclər",
+    "upfrontTitle": "Köçərkən ilkin ödəniş",
+    "rent": "Kirayə (bütün ev)",
+    "rentPerPlace": "Kirayə (bir yer)",
+    "utilities": "Kommunal",
+    "internet": "İnternet",
+    "other": "Digər aylıq xərclər",
+    "otherWithNote": "Digər: {note}",
+    "monthlyTotal": "Təxmini aylıq cəmi",
+    "monthlyTotalPlace": "Sizin təxmini aylıq payınız",
+    "perPerson": "{count} nəfərə bölünəndə, nəfərə",
+    "firstMonth": "İlk ayın kirayəsi",
+    "deposit": "Depozit",
+    "commission": "Makler komissiyası",
+    "upfrontTotal": "Təxmini ilkin cəmi",
+    "included": "Kirayəyə daxildir",
+    "none": "Yoxdur",
+    "unknown": "Məlum deyil",
+    "atLeast": "ən azı {value}",
+    "sharersUnknown": "Kommunal xərclərin neçə nəfərə bölündüyü göstərilməyib, ona görə sizin payınız hesablanmayıb.",
+    "note": "Təxmini hesablamadır: elan sahibinin göstərdiyi məbləğlərə əsaslanır. \"Məlum deyil\" olan xərclər cəmə daxil edilmir — dəqiqləşdirmək üçün elan sahibindən soruşun."
+  },
+  "notifications": {
+    "title": "Bildirişlər",
+    "lead": "Gələn sorğular, sorğularınıza cavablar və saxlanılmış axtarışlarınıza uyğun yeni elanlar.",
+    "emptyTitle": "Hələ bildiriş yoxdur",
+    "emptyBody": "Axtarışı yadda saxlayın — uyğun yeni elan dərc olunanda burada görəcəksiniz.",
+    "manageSearches": "Saxlanılmış axtarışlar",
+    "new": "Yeni",
+    "searchMatch": "\"{search}\" axtarışınıza uyğun yeni elan: {title}",
+    "inquiryReceived": "{name} sizə sorğu göndərdi: {title}",
+    "inquiryAccepted": "{name} sorğunuzu qəbul etdi: {title}",
+    "inquiryDeclined": "{name} sorğunuzu rədd etdi: {title}",
+    "channelNote": "Bildirişlər yalnız saytda göstərilir. Yeni sorğular haqqında e-poçt da göndərilir."
   }
 }

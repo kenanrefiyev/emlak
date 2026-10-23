@@ -35,7 +35,9 @@
     "closeMenu": "Menüyü kapat",
     "language": "Dil",
     "skipToContent": "İçeriğe geç",
-    "mainNav": "Ana menü"
+    "mainNav": "Ana menü",
+    "notifications": "Bildirimler",
+    "notificationsCount": "{count, plural, one {Bildirimler: # yeni} other {Bildirimler: # yeni}}"
   },
   "common": {
     "search": "Ara",
@@ -235,6 +237,16 @@
       "OWNER": "Ev sahibi",
       "AGENT": "Emlakçı",
       "ADMIN": "Yönetici"
+    },
+    "availability": {
+      "AVAILABLE": "Müsait",
+      "TEMPORARILY_UNAVAILABLE": "Geçici olarak müsait değil",
+      "RESERVED": "Rezerve edildi"
+    },
+    "noise": {
+      "QUIET": "Sessiz bir ev istiyorum",
+      "MODERATE": "Orta seviye olur",
+      "LIVELY": "Gürültü beni rahatsız etmez"
     }
   },
   "home": {
@@ -381,7 +393,15 @@
     "saveSearchName": "Arama adı",
     "saveSearchDone": "Arama kaydedildi",
     "loginToSave": "Aramayı kaydetmek için giriş yapın",
-    "perPlaceNote": "Bazı fiyatlar kişi başı, bazıları tüm daire için — kartta belirtilir."
+    "perPlaceNote": "Bazı fiyatlar kişi başı, bazıları tüm daire için — kartta belirtilir.",
+    "utilities": "Faturalar",
+    "utilitiesExcluded": "Faturalar ayrıca ödenir",
+    "availableOnly": "Yalnızca şu an müsait olanlar",
+    "verifiedOwner": "Yalnızca doğrulanmış ev sahibi / emlakçı",
+    "viewMap": "Harita",
+    "mapOpen": "İlana bak",
+    "mapNote": "Haritada adres değil, yaklaşık bölge gösterilir (metro istasyonu, mahalle veya ilçe merkezi).",
+    "mapCapped": "Haritada ilk {count} ilan gösteriliyor — daha net sonuç için filtreleri daraltın."
   },
   "card": {
     "save": "Kaydet",
@@ -397,7 +417,9 @@
     "metaArea": "Alan",
     "metaSpaces": "Boş yer",
     "metaResidents": "Evde",
-    "metaUni": "Üni."
+    "metaUni": "Üni.",
+    "totalWithCosts": "Giderlerle ≈ {total}/ay",
+    "utilitiesIncluded": "Faturalar dahil"
   },
   "listing": {
     "breadcrumbs": "Sayfa yolu",
@@ -470,7 +492,13 @@
     "features": "Özellikler",
     "address": "Adres",
     "rules": "Kurallar ve koşullar",
-    "verifiedLandlord": "Doğrulanmış ev sahibi"
+    "verifiedLandlord": "Doğrulanmış ev sahibi",
+    "costsTitle": "Toplam kira maliyeti",
+    "depositUnknown": "Bilinmiyor",
+    "lastUpdated": "Son güncelleme: {date}",
+    "availabilityConfirmed": "Müsaitlik onaylandı: {date}",
+    "availabilityNotConfirmed": "Müsaitlik henüz onaylanmadı",
+    "otherUniversities": "Yakındaki üniversiteler"
   },
   "roommates": {
     "heading": "Ev arkadaşı bul",
@@ -519,7 +547,7 @@
     "match": "%{score} uyumlu",
     "matchTitle": "Uyum: %{score}",
     "matchExplain": "Aktif ilanınızla karşılaştırılarak hesaplandı.",
-    "matchDisclaimer": "Uyum yüzdesi yalnızca bütçe, bölge, tarih, ev türü ve ev alışkanlıklarını karşılaştırır. İnsanların anlaşıp anlaşmayacağını tahmin etmez.",
+    "matchDisclaimer": "Uyum yüzdesi yalnızca bütçe, bölge, taşınma tarihi, kalış süresi, ev türü ve ev alışkanlıklarını karşılaştırır. İnsanların anlaşıp anlaşmayacağını tahmin etmez.",
     "matchHowLink": "Nasıl hesaplanıyor?",
     "matchNeedAd": "Uyum yüzdesini görmek için kendi ev arkadaşı ilanınızı verin.",
     "reasons": {
@@ -532,10 +560,21 @@
       "spaces": "Yer yeterli",
       "smoking": "Sigara açısından uygun",
       "sleep": "Uyku düzeni uygun",
-      "cleaning": "Temizlik yaklaşımı uygun"
+      "cleaning": "Temizlik yaklaşımı uygun",
+      "duration": "Kalış süresi uyumlu",
+      "durationNear": "Kalış süresi yaklaşık uyumlu",
+      "noise": "Gürültü beklentisi uyumlu"
     },
     "posted": "{date}",
-    "originalLanguage": "İlan {language} yazılmış."
+    "originalLanguage": "İlan {language} yazılmış.",
+    "notSpecified": "Belirtilmemiş",
+    "noise": "Gürültü",
+    "matchHowTitle": "Yüzde nasıl hesaplanır?",
+    "matchHow": "Bütçe 30 puan, bölge 20, taşınma tarihi 15, kalış süresi 10, ev türü ve yer sayısı 10, ev alışkanlıkları 15 puan (sigara, uyku, temizlik, gürültü — yalnızca iki taraf da cevapladıysa). Cevaplanmayan sorular puan getirmez ve uyumsuzluk sayılmaz.",
+    "profileHiddenNote": "Profil bilgileriniz (üniversite, sınıf, şehir, hakkımda) bu ilanda başkalarına gösterilmiyor.",
+    "saveProfile": "Profili kaydet",
+    "unsaveProfile": "Kaydedildi",
+    "saveFailed": "Kaydedilemedi — tekrar deneyin."
   },
   "roommateForm": {
     "titleNew": "Ev arkadaşı ilanı",
@@ -578,7 +617,12 @@
     "submit": "Moderasyona gönder",
     "submitEdit": "Kaydet ve incelemeye gönder",
     "created": "İlanınız moderasyona gönderildi. Onaydan sonra yayınlanacak.",
-    "updated": "Değişiklikler kaydedildi. İlan yeniden incelemeye gönderildi."
+    "updated": "Değişiklikler kaydedildi. İlan yeniden incelemeye gönderildi.",
+    "notSaying": "Belirtmek istemiyorum",
+    "lifestyleOptional": "Bu sorular isteğe bağlıdır. Cevaplamadığınız sorular uyum hesabında dikkate alınmaz.",
+    "sectionPrivacy": "Gizlilik",
+    "showProfile": "Profil bilgilerimi ilanda göster",
+    "showProfileHint": "Üniversite, sınıf, geldiğiniz şehir ve \"hakkımda\" metni. Telefon numarası ilanda asla gösterilmez."
   },
   "listingForm": {
     "titleNew": "Kiralık ilan ver",
@@ -717,7 +761,8 @@
       "searches": "Kayıtlı aramalar",
       "profile": "Profil",
       "security": "Güvenlik",
-      "dashboard": "İlan paneli"
+      "dashboard": "İlan paneli",
+      "notifications": "Bildirimler"
     },
     "overviewListings": "Kiralık ilanlar",
     "overviewRoommates": "Ev arkadaşı ilanları",
@@ -792,7 +837,8 @@
     "deleteAccountConfirm": "Onaylamak için şifrenizi yazın",
     "emailUnverified": "Onaylanmadı",
     "emailVerified": "Onaylandı",
-    "role": "Hesap türü"
+    "role": "Hesap türü",
+    "savedRoommates": "Kaydedilen ev arkadaşı profilleri"
   },
   "agent": {
     "title": "Emlakçı paneli",
@@ -1262,7 +1308,8 @@
       "relist": "Yeniden yayınla",
       "feature": "VIP yap",
       "deactivate": "Pasifleştir",
-      "delete": "Sil"
+      "delete": "Sil",
+      "reconfirm": "Hâlâ müsait"
     },
     "confirm": {
       "rented": "İlan kiralandı olarak işaretlensin mi? Aramadan kalkar; daha sonra yeniden yayınlayabilirsiniz.",
@@ -1276,7 +1323,8 @@
       "price": "Fiyat",
       "views": "Görüntülenme",
       "inquiries": "Talep",
-      "dates": "Tarihler"
+      "dates": "Tarihler",
+      "saves": "Kaydetme"
     },
     "select": "Seç: {title}",
     "bulk": {
@@ -1293,8 +1341,10 @@
         "renew": "{count, plural, one {# ilanın} other {# ilanın}} süresi uzatılsın mı?",
         "rented": "{count, plural, one {# ilan} other {# ilan}} kiralandı olarak işaretlensin mi?",
         "archive": "{count, plural, one {# ilan} other {# ilan}} pasifleştirilsin mi?",
-        "delete": "{count, plural, one {# ilan} other {# ilan}} kalıcı olarak silinecek. Bu geri alınamaz."
-      }
+        "delete": "{count, plural, one {# ilan} other {# ilan}} kalıcı olarak silinecek. Bu geri alınamaz.",
+        "reconfirm": "{count, plural, one {# ilanın} other {# ilanın}} hâlâ müsait olduğu onaylansın mı?"
+      },
+      "reconfirm": "Müsaitliği onayla"
     },
     "verifiedListing": "Doğrulandı",
     "noPhotos": "fotoğraf yok",
@@ -1374,7 +1424,18 @@
       "statusNote": "İlanın durumunu «İlanlarım» bölümünden değiştirebilirsiniz.",
       "openPublicPreview": "Herkese açık sayfayı yeni pencerede aç",
       "draftFound": "Bu cihazda yarım kalmış bir ilan taslağı var.",
-      "restoreDraft": "Taslağı geri yükle"
+      "restoreDraft": "Taslağı geri yükle",
+      "depositHint": "Boş bırakırsanız \"bilinmiyor\" gösterilir. Depozito yoksa 0 yazın.",
+      "costsTitle": "Aylık ek giderler",
+      "costsLead": "Öğrenciler toplam maliyeti görsün diye doldurun. Boş bırakılan alan ilanda \"Bilinmiyor\" olarak gösterilir; gider yoksa 0 yazın.",
+      "utilitiesCost": "Faturalar (tahmini, ₼/ay)",
+      "utilitiesCostHint": "Tüm ev için. Faturalar kiraya dahilse boş bırakın.",
+      "internetCost": "İnternet (₼/ay)",
+      "otherCosts": "Diğer aylık giderler (₼)",
+      "otherCostsNote": "Diğer giderler nedir?",
+      "otherCostsNotePlaceholder": "örn. aidat, asansör",
+      "costSharers": "Giderler kaç kişiye bölünüyor?",
+      "costSharersHint": "Kişi başı payı hesaplamak için. Bilinmiyorsa boş bırakın."
     },
     "inquiries": {
       "leadLandlord": "İlanlarınıza gelen talepler. Aşamayı ve notları yalnızca siz görürsünüz.",
@@ -1531,6 +1592,48 @@
       "status": "Durum",
       "period": "Dönem",
       "price": "Fiyat"
-    }
+    },
+    "staleTitle": "{count, plural, one {# ilan onay bekliyor} other {# ilan onay bekliyor}}",
+    "staleLead": "Bu ilanların hâlâ müsait olduğunu 14 günden uzun süredir onaylamadınız. Öğrenciler eski ilanlarla vakit kaybetmesin diye onaylayın veya \"kiralandı\" olarak işaretleyin.",
+    "confirmedOn": "Onaylandı: {date}",
+    "needsConfirmation": "Müsaitliği onaylayın",
+    "availabilityLabel": "Durum:",
+    "availabilitySaved": "Kaydedildi"
+  },
+  "costs": {
+    "monthlyTitle": "Aylık giderler",
+    "upfrontTitle": "Taşınırken ilk ödeme",
+    "rent": "Kira (tüm ev)",
+    "rentPerPlace": "Kira (bir yer)",
+    "utilities": "Faturalar",
+    "internet": "İnternet",
+    "other": "Diğer aylık giderler",
+    "otherWithNote": "Diğer: {note}",
+    "monthlyTotal": "Tahmini aylık toplam",
+    "monthlyTotalPlace": "Tahmini aylık payınız",
+    "perPerson": "{count} kişiye bölününce, kişi başı",
+    "firstMonth": "İlk ayın kirası",
+    "deposit": "Depozito",
+    "commission": "Emlakçı komisyonu",
+    "upfrontTotal": "Tahmini ilk ödeme toplamı",
+    "included": "Kiraya dahil",
+    "none": "Yok",
+    "unknown": "Bilinmiyor",
+    "atLeast": "en az {value}",
+    "sharersUnknown": "Faturaların kaç kişiye bölündüğü belirtilmemiş, bu yüzden payınız hesaplanmadı.",
+    "note": "Tahmini hesaplamadır: ilan sahibinin belirttiği tutarlara dayanır. \"Bilinmiyor\" olan giderler toplama eklenmez — netleştirmek için ilan sahibine sorun."
+  },
+  "notifications": {
+    "title": "Bildirimler",
+    "lead": "Gelen talepler, taleplerinize verilen cevaplar ve kayıtlı aramalarınıza uyan yeni ilanlar.",
+    "emptyTitle": "Henüz bildirim yok",
+    "emptyBody": "Bir aramayı kaydedin — uyan yeni ilan yayınlandığında burada göreceksiniz.",
+    "manageSearches": "Kayıtlı aramalar",
+    "new": "Yeni",
+    "searchMatch": "\"{search}\" aramanıza uyan yeni ilan: {title}",
+    "inquiryReceived": "{name} size talep gönderdi: {title}",
+    "inquiryAccepted": "{name} talebinizi kabul etti: {title}",
+    "inquiryDeclined": "{name} talebinizi reddetti: {title}",
+    "channelNote": "Bildirimler yalnızca sitede gösterilir. Yeni talepler için ayrıca e-posta gönderilir."
   }
 }

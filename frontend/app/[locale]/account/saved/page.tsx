@@ -5,7 +5,9 @@ import type { AppLocale } from "@/i18n/routing";
 import { requireUser } from "@/server/auth/current";
 import { db } from "@/server/db";
 import { cardsByIds, publicListingWhere } from "@/server/listings/queries";
+import { publicRoommateWhere, roommateCards } from "@/server/roommates/queries";
 import { ListingCard } from "@/components/listings/listing-card";
+import { RoommateCard } from "@/components/roommates/roommate-card";
 import { EmptyState } from "@/components/site/section";
 
 export default async function SavedPage({ params }: { params: Promise<{ locale: AppLocale }> }) {
@@ -19,7 +21,19 @@ export default async function SavedPage({ params }: { params: Promise<{ locale: 
     orderBy: { createdAt: "desc" },
     select: { listingId: true },
   });
-  const cards = await cardsByIds(locale, rows.map((r) => r.listingId));
+  const [cards, savedAds] = await Promise.all([
+    cardsByIds(locale, rows.map((r) => r.listingId)),
+    db.savedRoommateAd.findMany({
+      where: { userId: user.id, roommateAd: publicRoommateWhere() },
+      orderBy: { createdAt: "desc" },
+      take: 60,
+      select: { roommateAdId: true },
+    }),
+  ]);
+  const order = savedAds.map((r) => r.roommateAdId);
+  const people = order.length
+    ? (await roommateCards(locale, { id: { in: order } }, order.length)).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+    : [];
   return (
     <div>
       <h1 className="t-h2 mb-6">{t("nav.saved")}</h1>
@@ -37,6 +51,20 @@ export default async function SavedPage({ params }: { params: Promise<{ locale: 
             </li>
           ))}
         </ul>
+      )}
+      {people.length > 0 && (
+        <section className="mt-12" aria-labelledby="saved-people-h">
+          <h2 id="saved-people-h" className="t-h3 mb-4">
+            {t("savedRoommates")}
+          </h2>
+          <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {people.map((ad) => (
+              <li key={ad.id}>
+                <RoommateCard ad={ad} locale={locale} />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

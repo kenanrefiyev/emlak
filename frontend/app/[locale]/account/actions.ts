@@ -10,7 +10,17 @@ import { formObject, fieldErrorsOf } from "@/lib/validation/helpers";
 import { profileSchema } from "@/lib/validation/misc";
 import { ServiceError, type ActionState } from "@/server/errors";
 import { db } from "@/server/db";
-import { archiveListing, deleteListing, markRented, renewListing, saveTranslation, submitListing } from "@/server/listings/service";
+import {
+  archiveListing,
+  confirmListingAvailability,
+  deleteListing,
+  markRented,
+  renewListing,
+  saveTranslation,
+  setListingAvailability,
+  submitListing,
+} from "@/server/listings/service";
+import type { Availability } from "@/lib/domain";
 import {
   archiveRoommateAd,
   closeRoommateAd,
@@ -110,6 +120,7 @@ export async function saveTranslationAction(_prev: ActionState, formData: FormDa
 
 const listingOps = {
   submit: submitListing,
+  reconfirm: confirmListingAvailability,
   rented: markRented,
   archive: archiveListing,
   renew: renewListing,
@@ -127,6 +138,20 @@ export async function listingOpAction(_prev: ActionState, formData: FormData): P
     revalidatePath("/[locale]/account/listings", "page");
     revalidatePath("/[locale]/dashboard", "layout");
     return { status: "ok", data: { op, requeued: Boolean(result && "requeued" in result && result.requeued) } };
+  } catch (err) {
+    return failure(err);
+  }
+}
+
+/** Owner-reported availability; checked against the owner on the server. */
+export async function setAvailabilityAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    const user = await requireActor();
+    const id = str(formData, "id");
+    await setListingAvailability(user, id, str(formData, "availability") as Availability);
+    revalidatePath("/[locale]/dashboard", "layout");
+    revalidatePath(`/[locale]/listings/${id}`, "page");
+    return { status: "ok" };
   } catch (err) {
     return failure(err);
   }

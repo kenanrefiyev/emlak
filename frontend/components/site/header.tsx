@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { FilePlus2, UserRound } from "lucide-react";
+import { Bell, FilePlus2, UserRound } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { getCurrentUser } from "@/server/auth/current";
 import { savedCount } from "@/server/engagement";
+import { unreadNotificationCount } from "@/server/notifications";
 import { Logo } from "./logo";
 import { LanguageSwitcher } from "./language-switcher";
 import { MobileNav } from "./mobile-nav";
@@ -24,7 +25,7 @@ export async function SiteHeader({ locale }: { locale: AppLocale }) {
     { href: "/family", label: t("family") },
     { href: "/areas", label: t("areas") },
   ];
-  const saved = user ? await savedCount(user.id) : 0;
+  const [saved, unread] = user ? await Promise.all([savedCount(user.id), unreadNotificationCount(user.id)]) : [0, 0];
   const accountHref = user?.role === "AGENT" || user?.role === "OWNER" ? "/dashboard" : "/account";
 
   return (
@@ -46,6 +47,14 @@ export async function SiteHeader({ locale }: { locale: AppLocale }) {
           </div>
           {user ? (
             <>
+              <Link href="/account/notifications" className="icon-btn relative !rounded-full" aria-label={unread ? t("notificationsCount", { count: unread }) : t("notifications")} title={t("notifications")}>
+                <Bell className="size-5" aria-hidden />
+                {unread > 0 && (
+                  <span aria-hidden className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] leading-none font-bold text-white tabular-nums">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
+              </Link>
               <SavedLink initialCount={saved} />
               <Link href={accountHref} className="btn btn-outline btn-sm hidden !min-h-[3.25rem] !px-6 md:inline-flex">
                 <UserRound className="size-5" aria-hidden />
