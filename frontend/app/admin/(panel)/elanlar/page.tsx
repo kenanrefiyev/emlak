@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { Prisma } from "@/generated/prisma/client";
 import { requireAdmin } from "@/server/auth/current";
 import { db } from "@/server/db";
-import { AdminPage, CATEGORY_AZ, Panel, StatusPill, Table, Tabs, fmtDate } from "@/components/admin/ui";
+import { AdminPage, AVAILABILITY_AZ, CATEGORY_AZ, Panel, StatusPill, Table, Tabs, fmtDate } from "@/components/admin/ui";
 import { OpButton } from "@/components/account/op-button";
 import { moderateListingAction } from "@/app/admin/actions";
 import { LISTING_STATUSES } from "@/lib/domain";
@@ -50,6 +50,8 @@ export default async function AdminListings({ searchParams }: { searchParams: SP
         monthlyRent: true,
         isVerified: true,
         isDemo: true,
+        availability: true,
+        availabilityConfirmedAt: true,
         submittedAt: true,
         updatedAt: true,
         expiresAt: true,
@@ -136,6 +138,10 @@ export default async function AdminListings({ searchParams }: { searchParams: SP
                       <p className="mt-1 flex flex-wrap gap-1.5">
                         {l.isDemo && <span className="tag bg-gray text-ink-2">Demo</span>}
                         {l.isVerified && <span className="tag bg-ok-soft text-ok">Yoxlanılıb</span>}
+                        {l.availability !== "AVAILABLE" && <span className="tag bg-warn-soft text-warn">{AVAILABILITY_AZ[l.availability]}</span>}
+                        <span className="tag bg-gray text-ink-2">
+                          {l.availabilityConfirmedAt ? `Təsdiq: ${fmtDate(l.availabilityConfirmedAt)}` : "Boşluq təsdiqlənməyib"}
+                        </span>
                         {l.featured[0] && <span className="tag bg-brand-soft text-brand">VIP</span>}
                         {l._count.reports > 0 && <span className="tag bg-danger-soft text-danger">{l._count.reports} şikayət</span>}
                       </p>

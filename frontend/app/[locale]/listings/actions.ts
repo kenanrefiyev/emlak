@@ -2,7 +2,7 @@
 
 import { getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/server/auth/current";
-import { createContactRequest, createReport, revealAgentPhone, savedCount, setSaved } from "@/server/engagement";
+import { createContactRequest, createReport, revealAgentPhone, savedCount, setSaved, setSavedRoommate } from "@/server/engagement";
 import { failure, localeFrom } from "@/server/action-utils";
 import { formObject } from "@/lib/validation/helpers";
 import { ServiceError, type ActionState } from "@/server/errors";
@@ -18,6 +18,17 @@ export async function toggleSavedAction(listingId: string, saved: boolean): Prom
   try {
     await setSaved(user.id, listingId, Boolean(saved));
     return { ok: true, count: await savedCount(user.id) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function toggleSavedRoommateAction(roommateAdId: string, saved: boolean): Promise<{ ok: boolean }> {
+  const user = await getCurrentUser();
+  if (!user || typeof roommateAdId !== "string") return { ok: false };
+  try {
+    await setSavedRoommate(user.id, roommateAdId, Boolean(saved));
+    return { ok: true };
   } catch {
     return { ok: false };
   }

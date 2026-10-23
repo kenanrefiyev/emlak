@@ -4,10 +4,19 @@ import { db } from "@/server/db";
 import { ServiceError } from "@/server/errors";
 import { rateLimit } from "@/server/rate-limit";
 import { pickTranslation } from "@/server/listings/queries";
-import { archiveListing, deleteListing, markRented, renewListing, submitListing, type Actor } from "@/server/listings/service";
+import {
+  archiveListing,
+  confirmListingAvailability,
+  deleteListing,
+  markRented,
+  needsConfirmation,
+  renewListing,
+  submitListing,
+  type Actor,
+} from "@/server/listings/service";
 import type { AppLocale } from "@/i18n/routing";
 import { Prisma, type LeadStatus, type ListingCategory, type ListingEventType } from "@/generated/prisma/client";
-import { LISTING_CATEGORIES } from "@/lib/domain";
+import { CONFIRM_STALE_DAYS, LISTING_CATEGORIES } from "@/lib/domain";
 
 const DAY = 86_400_000;
 
@@ -45,7 +54,13 @@ export async function dashboardOverview(userId: string, locale: AppLocale) {
   const now = new Date();
   const since30 = new Date(now.getTime() - 30 * DAY);
   const soon = new Date(now.getTime() + 7 * DAY);
-  const [byStatus, expiredCount, activeCount, viewsAll, views30, inquiriesAll, inquiriesNew, inquiriesPending, recentInquiries, expiring, recentListings] =
+  const staleBefore = new Date(now.getTime() - CONFIRM_STALE_DAYS * DAY);
+  const staleWhere: Prisma.ListingWhereInput = {
+    ownerId: userId,
+    ...statusWhere("ACTIVE", now),
+    OR: [{ availabilityConfirmedAt: { lt: staleBefore } }, { availabilityConfirmedAt: null, publishedAt: { lt: staleBefore } }],
+  };
+  const [byStatus, expiredCount, activeCount, viewsAll, views30, inquiriesAll, inquiriesNew, inquiriesPending, recentInquiries, expiring, recentListings, stale, staleCount] =
     await Promise.all([
       db.listing.groupBy({ by: ["status"], where: { ownerId: userId }, _count: { _all: true } }),
       db.listing.count({ where: { ownerId: userId, ...statusWhere("EXPIRED", now) } }),
@@ -92,6 +107,13 @@ export async function dashboardOverview(userId: string, locale: AppLocale) {
           translations: { where: { OR: [{ locale }, { isOriginal: true }] }, select: { locale: true, title: true, isOriginal: true } },
         },
       }),
+      db.listing.findMany({
+        where: staleWhere,
+        orderBy: [{ availabilityConfirmedAt: { sort: "asc", nulls: "first" } }, { publishedAt: "asc" }],
+        take: 5,
+        select: { id: true, availabilityConfirmedAt: true, publishedAt: true, translations: { where: { OR: [{ locale }, { isOriginal: true }] }, select: { locale: true, title: true, isOriginal: true } } },
+      }),
+      db.listing.count({ where: staleWhere }),
     ]);
   const count = (s: string) => byStatus.find((r) => r.status === s)?._count._all ?? 0;
   const total = byStatus.reduce((n, r) => n + r._count._all, 0);
@@ -142,6 +164,8 @@ export async function dashboardOverview(userId: string, locale: AppLocale) {
       listingTitle: pickTranslation(r.listing?.translations ?? [], locale)?.title ?? "—",
     })),
     expiring: expiring.map((l) => ({ id: l.id, expiresAt: l.expiresAt!, title: pickTranslation(l.translations, locale)?.title ?? "—" })),
+    stale: stale.map((l) => ({ id: l.id, lastConfirmed: l.availabilityConfirmedAt ?? l.publishedAt, title: pickTranslation(l.translations, locale)?.title ?? "—" })),
+    staleCount,
     activity: activity.slice(0, 8),
   };
 }
@@ -292,6 +316,9 @@ export async function ownerListings(ownerId: string, locale: AppLocale, f: Listi
     createdAt: true,
     updatedAt: true,
     expiresAt: true,
+    publishedAt: true,
+    availability: true,
+    availabilityConfirmedAt: true,
     isVerified: true,
     district: { select: { nameAz: true, nameTr: true, nameRu: true, nameEn: true } },
     neighborhood: { select: { nameAz: true, nameTr: true, nameRu: true, nameEn: true } },
@@ -358,7 +385,11 @@ export async function ownerListings(ownerId: string, locale: AppLocale, f: Listi
       imageCount: l._count.images,
       featuredUntil: l.featured[0]?.endsAt ?? null,
       views: events.get(l.id)?.VIEW ?? 0,
+      saves: events.get(l.id)?.SAVE ?? 0,
       inquiries: inquiries.get(l.id) ?? 0,
+      availability: l.availability,
+      availabilityConfirmedAt: l.availabilityConfirmedAt,
+      needsConfirmation: ownerStatusOf(l, now) === "ACTIVE" && needsConfirmation(l, now),
     })),
   };
 }
@@ -384,7 +415,14 @@ export async function ownerStatusCounts(ownerId: string) {
 
 // ───────────── bulk actions ─────────────
 
-export const BULK_OPS = { submit: submitListing, rented: markRented, archive: archiveListing, renew: renewListing, delete: deleteListing } as const;
+export const BULK_OPS = {
+  submit: submitListing,
+  reconfirm: confirmListingAvailability,
+  rented: markRented,
+  archive: archiveListing,
+  renew: renewListing,
+  delete: deleteListing,
+} as const;
 export type BulkOp = keyof typeof BULK_OPS;
 
 /**

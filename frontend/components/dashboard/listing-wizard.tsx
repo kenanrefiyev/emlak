@@ -44,6 +44,11 @@ export interface WizardValues {
   deposit: number | null;
   commissionType: string;
   commissionValue: number | null;
+  utilitiesCost: number | null;
+  internetCost: number | null;
+  otherCosts: number | null;
+  otherCostsNote: string | null;
+  costSharers: number | null;
   districtId: string;
   neighborhoodId: string | null;
   metroStationId: string | null;
@@ -116,6 +121,11 @@ const FIELD_STEP: Record<string, StepKey> = {
   commissionType: "conditions",
   commissionValue: "conditions",
   utilities: "conditions",
+  utilitiesCost: "conditions",
+  internetCost: "conditions",
+  otherCosts: "conditions",
+  otherCostsNote: "conditions",
+  costSharers: "conditions",
   minDurationMonths: "conditions",
   availableFrom: "conditions",
   paymentTerms: "conditions",
@@ -698,7 +708,7 @@ export function ListingWizard({
 
           {/* 4 — conditions */}
           <div {...panel("conditions")} className={grid}>
-            {num("deposit", t("depositAzn"), { min: 0, max: 50000 })}
+            {num("deposit", t("depositAzn"), { min: 0, max: 50000, hint: t("depositHint") })}
             {enumSel("utilities", t("utilitiesIncluded"), UTILITIES, "utilities")}
             <Field name="commissionType" label={lf("commissionType")} hint={isAgent ? t("commissionHintAgent") : undefined}>
               {(p) => (
@@ -712,6 +722,20 @@ export function ListingWizard({
               )}
             </Field>
             {commission !== "NONE" ? num("commissionValue", lf("commissionValue"), { min: 0, max: commission === "PERCENT" ? 100 : 50000, required: true }) : <span className="hidden sm:block" />}
+            <fieldset className="grid gap-5 rounded-xl bg-mist p-4 sm:col-span-2 sm:grid-cols-2">
+              <legend className="sr-only">{t("costsTitle")}</legend>
+              <div className="sm:col-span-2">
+                <p className="font-semibold">{t("costsTitle")}</p>
+                <p className="hint mt-1">{t("costsLead")}</p>
+              </div>
+              {num("utilitiesCost", t("utilitiesCost"), { min: 0, max: 5000, hint: t("utilitiesCostHint") })}
+              {num("internetCost", t("internetCost"), { min: 0, max: 1000 })}
+              {num("otherCosts", t("otherCosts"), { min: 0, max: 5000 })}
+              <Field name="otherCostsNote" label={t("otherCostsNote")}>
+                {(p) => <input {...p} defaultValue={values.otherCostsNote ?? ""} maxLength={200} placeholder={t("otherCostsNotePlaceholder")} className="field" />}
+              </Field>
+              {num("costSharers", t("costSharers"), { min: 1, max: 30, hint: t("costSharersHint") })}
+            </fieldset>
             <Field name="availableFrom" label={t("moveIn")} required>
               {(p) => <input {...p} type="date" defaultValue={values.availableFrom} className="field" />}
             </Field>

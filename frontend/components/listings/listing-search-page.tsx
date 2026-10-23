@@ -10,7 +10,8 @@ import {
   type ListingFilterKey,
   type ListingFilters,
 } from "@/lib/search/listing-filters";
-import { featuredListingCards, searchListings } from "@/server/listings/queries";
+import { featuredListingCards, searchListings, searchMapPoints } from "@/server/listings/queries";
+import { formatAzn } from "@/lib/format";
 import { getLocationOptions } from "@/server/locations";
 import { getCurrentUser } from "@/server/auth/current";
 import { savedIdsFor } from "@/server/engagement";
@@ -20,6 +21,7 @@ import { ImpressionBeacon } from "./impression-beacon";
 import { FilterForm } from "./filter-form";
 import { SearchToolbar } from "./search-toolbar";
 import { SaveSearchButton } from "./save-search-button";
+import { ResultsMap } from "./results-map";
 import { Pagination } from "@/components/site/pagination";
 import { EmptyState } from "@/components/site/section";
 
@@ -33,9 +35,11 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
     getCurrentUser(),
     getLocationOptions(locale, "slug"),
   ]);
-  const [result, featured] = await Promise.all([
+  const isMap = filters.view === "map";
+  const [result, featured, map] = await Promise.all([
     searchListings(filters, locale, segment),
-    filters.page === 1 ? featuredListingCards(locale, 3, segment) : Promise.resolve([]),
+    filters.page === 1 && !isMap ? featuredListingCards(locale, 3, segment) : Promise.resolve([]),
+    isMap ? searchMapPoints(filters, locale, segment) : Promise.resolve(null),
   ]);
   const saved = await savedIdsFor(user?.id, [...result.items, ...featured].map((l) => l.id));
   const query = listingFiltersToQuery({ ...filters, page: 1 });
@@ -66,8 +70,12 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
         return t("chipSpaces", { count: filters.spaces ?? 0 });
       case "furnishing":
         return e(`furnishing.${filters.furnishing!}`);
-      case "utilitiesIncluded":
-        return t("utilitiesIncluded");
+      case "utilities":
+        return filters.utilities === "included" ? t("utilitiesIncluded") : t("utilitiesExcluded");
+      case "available":
+        return t("availableOnly");
+      case "verifiedOwner":
+        return t("verifiedOwner");
       case "moveIn":
         return t("chipMoveIn", { date: formatShortDate(filters.moveIn!, locale) });
       case "duration":
@@ -154,6 +162,20 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
             </div>
           )}
 
+          {map && result.total > 0 && (
+            <div className="mb-8">
+              <ResultsMap
+                center={map.center}
+                points={map.points.map((p) => ({ id: p.id, href: `/${locale}/listings/${p.id}`, title: p.title, price: formatAzn(p.monthlyRent, locale), image: p.image, position: p.position }))}
+                labels={{ open: t("mapOpen"), university: options.universities.find((u) => u.value === filters.university)?.short ?? "" }}
+              />
+              <p className="mt-3 hint">
+                {t("mapNote")}
+                {map.capped && ` ${t("mapCapped", { count: map.points.length })}`}
+              </p>
+            </div>
+          )}
+
           {result.items.length === 0 ? (
             <EmptyState icon={<SearchX className="size-8" aria-hidden />} title={t("emptyTitle")} body={t("emptyBody")}>
               {active.length > 0 && (
@@ -163,10 +185,10 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
               )}
             </EmptyState>
           ) : (
-            <ul className={filters.view === "list" ? "grid gap-[30px]" : "grid gap-[30px] sm:grid-cols-2"}>
+            <ul className={filters.view === "grid" ? "grid gap-[30px] sm:grid-cols-2" : "grid gap-[30px]"}>
               {result.items.map((l, i) => (
                 <li key={l.id}>
-                  <ListingCard listing={l} locale={locale} saved={saved.has(l.id)} loggedIn={Boolean(user)} layout={filters.view} priority={i < 2} />
+                  <ListingCard listing={l} locale={locale} saved={saved.has(l.id)} loggedIn={Boolean(user)} layout={filters.view === "grid" ? "grid" : "list"} priority={i < 2} />
                 </li>
               ))}
             </ul>

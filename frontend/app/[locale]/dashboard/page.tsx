@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowRight, Clock3, Inbox, Plus } from "lucide-react";
+import { ArrowRight, CalendarCheck, Clock3, Inbox, Plus } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { requireUser } from "@/server/auth/current";
@@ -171,6 +171,30 @@ export default async function DashboardOverview({ params, searchParams }: { para
                 </li>
               ))}
             </ul>
+          )}
+
+          {data.staleCount > 0 && (
+            <div className="mt-10" role="region" aria-labelledby="stale-h">
+              <h2 id="stale-h" className="t-h3">
+                {t("staleTitle", { count: data.staleCount })}
+              </h2>
+              <p className="mt-1 text-sm text-ink-2">{t("staleLead")}</p>
+              <ul className="mt-3 divide-y divide-line">
+                {data.stale.map((l) => (
+                  <li key={l.id} className="flex flex-wrap items-center gap-3 py-3">
+                    <CalendarCheck className="size-4 shrink-0 text-warn" aria-hidden />
+                    <span className="min-w-[12rem] flex-1">
+                      <span className="block truncate font-medium">{l.title}</span>
+                      <span className="text-sm text-ink-2">{l.lastConfirmed ? t("confirmedOn", { date: formatDate(l.lastConfirmed, locale) }) : t("needsConfirmation")}</span>
+                    </span>
+                    <span className="flex shrink-0 gap-1.5">
+                      <OpButton action={listingOpAction} id={l.id} op="reconfirm" label={t("actions.reconfirm")} variant="primary" />
+                      <OpButton action={listingOpAction} id={l.id} op="rented" label={t("actions.rented")} confirm={t("confirm.rented")} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           <h2 className="t-h3 mt-10">{t("activityTitle")}</h2>

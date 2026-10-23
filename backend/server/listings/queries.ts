@@ -7,6 +7,7 @@ import { nameOf, nameSelect } from "@/lib/i18n-data";
 import { UNIVERSITY_RADIUS_KM, approxPosition, distanceKm, ownAreaPosition, spread, universityNearness, universityPosition, type LatLng } from "@/lib/baku-geo";
 import { PAGE_SIZE, SEGMENTS, type Segment } from "@/lib/domain";
 import type { ListingFilters } from "@/lib/search/listing-filters";
+import { rentalCosts, type Total } from "@/lib/costs";
 
 /** A listing is publicly visible only while published, unexpired and its owner is active. */
 export function publicListingWhere(now = new Date()): Prisma.ListingWhereInput {
@@ -21,6 +22,13 @@ const cardSelect = (locale: AppLocale) =>
     pricePerPlace: true,
     deposit: true,
     commissionType: true,
+    commissionValue: true,
+    utilitiesCost: true,
+    internet: true,
+    internetCost: true,
+    otherCosts: true,
+    costSharers: true,
+    availability: true,
     rooms: true,
     areaSqm: true,
     residentsCount: true,
@@ -65,6 +73,9 @@ export interface ListingCardData {
   availableSpaces: number | null;
   furnishing: CardRow["furnishing"];
   utilities: CardRow["utilities"];
+  /** Estimated monthly total (rent + running costs); see lib/costs. */
+  monthlyTotal: Total;
+  availability: CardRow["availability"];
   genderPreference: CardRow["genderPreference"];
   availableFrom: Date;
   isVerified: boolean;
@@ -108,6 +119,8 @@ function toCard(row: CardRow, locale: AppLocale): ListingCardData {
     availableSpaces: row.availableSpaces,
     furnishing: row.furnishing,
     utilities: row.utilities,
+    monthlyTotal: rentalCosts(row).monthly,
+    availability: row.availability,
     genderPreference: row.genderPreference,
     availableFrom: row.availableFrom,
     isVerified: row.isVerified,
@@ -143,7 +156,16 @@ export function buildListingWhere(f: ListingFilters, segment?: Segment, now = ne
   if (f.rooms) and.push({ rooms: f.rooms >= 4 ? { gte: 4 } : f.rooms });
   if (f.spaces) and.push({ availableSpaces: { gte: f.spaces } });
   if (f.furnishing) and.push({ furnishing: f.furnishing });
-  if (f.utilitiesIncluded) and.push({ utilities: "INCLUDED" });
+  if (f.utilities === "included") and.push({ utilities: "INCLUDED" });
+  if (f.utilities === "excluded") and.push({ utilities: { in: ["PARTLY", "NOT_INCLUDED"] } });
+  if (f.available) and.push({ availability: "AVAILABLE" });
+  if (f.verifiedOwner)
+    and.push({
+      OR: [
+        { owner: { role: "AGENT", agentProfile: { verificationStatus: "VERIFIED" } } },
+        { owner: { role: { not: "AGENT" }, profile: { verificationStatus: "VERIFIED" } } },
+      ],
+    });
   if (f.moveIn) and.push({ availableFrom: { lte: new Date(`${f.moveIn}T00:00:00Z`) } });
   if (f.duration) and.push({ minDurationMonths: { lte: f.duration } });
   if (f.verified) and.push({ isVerified: true });
@@ -235,6 +257,54 @@ export async function countsNearUniversities(unis: { slug: string; latitude: num
       return [u.slug, c ? spots.filter((p) => distanceKm(c, p) <= UNIVERSITY_RADIUS_KM).length : 0] as const;
     }),
   );
+}
+
+export interface MapPoint {
+  id: string;
+  title: string;
+  monthlyRent: number;
+  position: LatLng;
+  image: string | null;
+}
+
+/**
+ * Every listing matching the filters (capped) for the map view, placed at
+ * area level like the detail-page map — never at the private address.
+ * Listings with only a district are placed at the district centre.
+ */
+export async function searchMapPoints(f: ListingFilters, locale: AppLocale, segment?: Segment) {
+  let where = buildListingWhere(f, segment);
+  let center: LatLng | null = null;
+  if (f.university) {
+    const uni = await db.university.findUnique({ where: { slug: f.university }, select: placeFields });
+    center = uni ? universityPosition(uni) : null;
+    if (!center) return { points: [] as MapPoint[], center, capped: false };
+    const near = await listingsNearPoint(center, where);
+    where = { id: { in: near.map((r) => r.id).slice(0, 400) } };
+  }
+  const rows = await db.listing.findMany({
+    where,
+    orderBy: orderOf(f.sort),
+    take: 401,
+    select: {
+      id: true,
+      monthlyRent: true,
+      district: { select: { slug: true } },
+      metroStation: placeSelect,
+      neighborhood: placeSelect,
+      university: placeSelect,
+      translations: { where: { OR: [{ locale }, { isOriginal: true }] }, select: { locale: true, title: true, isOriginal: true } },
+      images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+    },
+  });
+  const points: MapPoint[] = rows.slice(0, 400).map((r) => ({
+    id: r.id,
+    title: pickTranslation(r.translations, locale)?.title ?? "—",
+    monthlyRent: r.monthlyRent,
+    position: spread(approxPosition(r), r.id),
+    image: r.images[0]?.url ?? null,
+  }));
+  return { points, center, capped: rows.length > 400 };
 }
 
 export async function searchListings(f: ListingFilters, locale: AppLocale, segment?: Segment) {
@@ -399,3 +469,22 @@ export async function nearbyListings(
 }
 
 type PlaceRow = { slug: string; latitude: number | null; longitude: number | null } | null;
+
+/**
+ * Universities within walking radius of the listing's own area (metro station
+ * or neighborhood), nearest first. Empty when only the district is known —
+ * too coarse to give a distance.
+ */
+export async function universitiesNear(l: { metroStation: PlaceRow; neighborhood: PlaceRow }, locale: AppLocale) {
+  const at = ownAreaPosition(l);
+  if (!at) return [];
+  const unis = await db.university.findMany({ select: { slug: true, shortName: true, latitude: true, longitude: true, ...nameSelect } });
+  return unis
+    .map((u) => {
+      const c = universityPosition(u);
+      return { slug: u.slug, shortName: u.shortName, name: nameOf(u, locale), km: c ? distanceKm(at, c) : Infinity };
+    })
+    .filter((u) => u.km <= UNIVERSITY_RADIUS_KM)
+    .sort((a, b) => a.km - b.km)
+    .slice(0, 4);
+}

@@ -52,6 +52,7 @@ const base: MatchableAd = {
   districtId: null,
   preferredDistrictIds: ["d1"],
   moveInDate: new Date("2026-11-01"),
+  durationMonths: 9,
   accommodationType: null,
   desiredPropertyType: "SHARED_APARTMENT",
   availableSpaces: null,
@@ -59,6 +60,7 @@ const base: MatchableAd = {
   smoking: "NO_SMOKING",
   sleepSchedule: "EARLY",
   cleaning: "ROTA",
+  noise: "QUIET",
 };
 
 describe("roommate matching rules", () => {
@@ -66,7 +68,7 @@ describe("roommate matching rules", () => {
     const place: MatchableAd = { ...base, id: "b", type: "HAS_PLACE", monthlyContribution: 250, budgetMin: null, budgetMax: null, districtId: "d1", preferredDistrictIds: [], accommodationType: "SHARED_APARTMENT", desiredPropertyType: null, availableSpaces: 1 };
     const r = matchAds(base, place)!;
     expect(r.score).toBe(100);
-    expect(r.reasons).toEqual(expect.arrayContaining(["budget", "area", "moveIn", "homeType", "spaces", "smoking", "sleep", "cleaning"]));
+    expect(r.reasons).toEqual(expect.arrayContaining(["budget", "area", "moveIn", "duration", "homeType", "spaces", "smoking", "sleep", "cleaning", "noise"]));
   });
 
   it("never matches two place-havers or an ad with itself", () => {
@@ -76,11 +78,27 @@ describe("roommate matching rules", () => {
   });
 
   it("gives no budget or area points when nothing overlaps", () => {
-    const other: MatchableAd = { ...base, id: "c", budgetMin: 600, budgetMax: 800, preferredDistrictIds: ["d9"], moveInDate: new Date("2027-03-01"), smoking: "ALLOWED", sleepSchedule: "LATE", cleaning: "EACH_OWN" };
+    const other: MatchableAd = { ...base, id: "c", budgetMin: 600, budgetMax: 800, preferredDistrictIds: ["d9"], moveInDate: new Date("2027-03-01"), durationMonths: 3, smoking: "ALLOWED", sleepSchedule: "LATE", cleaning: "EACH_OWN", noise: "LIVELY" };
     const r = matchAds(base, other)!;
     expect(r.reasons).not.toContain("budget");
     expect(r.reasons).not.toContain("area");
     expect(r.score).toBeLessThan(20);
+  });
+
+  it("skips household facets someone left unanswered instead of guessing", () => {
+    const place: MatchableAd = { ...base, id: "b", type: "HAS_PLACE", monthlyContribution: 250, budgetMin: null, budgetMax: null, districtId: "d1", preferredDistrictIds: [], accommodationType: "SHARED_APARTMENT", desiredPropertyType: null, availableSpaces: 1, smoking: null, noise: null };
+    const r = matchAds(base, place)!;
+    expect(r.reasons).not.toContain("smoking");
+    expect(r.reasons).not.toContain("noise");
+    expect(r.score).toBe(93);
+  });
+
+  it("rewards similar planned stay lengths", () => {
+    const near = matchAds(base, { ...base, id: "n", durationMonths: 12 })!;
+    const far = matchAds(base, { ...base, id: "f", durationMonths: 24 })!;
+    expect(near.reasons).toContain("durationNear");
+    expect(far.reasons).not.toContain("duration");
+    expect(far.reasons).not.toContain("durationNear");
   });
 });
 

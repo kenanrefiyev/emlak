@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ActionForm, CheckboxField, Field, FormError, SubmitButton } from "@/components/forms/action-form";
 import { createRoommateAction, updateRoommateAction } from "@/app/[locale]/account/actions";
-import { CLEANING, CONTACT_PREFS, GENDER_PREFS, GUESTS, LISTING_CATEGORIES, SLEEP, SMOKING, type RoommateType } from "@/lib/domain";
+import { CLEANING, CONTACT_PREFS, GENDER_PREFS, GUESTS, LISTING_CATEGORIES, NOISE, SLEEP, SMOKING, type RoommateType } from "@/lib/domain";
 import type { LocationOptions } from "@/server/locations";
 import { locales } from "@/i18n/routing";
 
@@ -31,11 +31,13 @@ export interface RoommateFormValues {
   moveInDate: string;
   durationMonths: number;
   genderPreference: string;
-  smoking: string;
-  cleaning: string;
-  sleepSchedule: string;
-  guests: string;
+  smoking: string | null;
+  cleaning: string | null;
+  sleepSchedule: string | null;
+  guests: string | null;
+  noise: string | null;
   petsOk: boolean;
+  showProfile: boolean;
   contactPreference: string;
 }
 
@@ -52,10 +54,11 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
   const editing = Boolean(values.id);
   const v = (x: number | string | null | undefined) => (x == null ? "" : String(x));
 
-  const enumSelect = (name: string, label: string, list: readonly string[], ns: string, value: string, required = true) => (
+  const enumSelect = (name: string, label: string, list: readonly string[], ns: string, value: string | null, required = true) => (
     <Field name={name} label={label} required={required}>
       {(p) => (
-        <select {...p} defaultValue={value} className="field">
+        <select {...p} defaultValue={value ?? ""} className="field">
+          {!required && <option value="">{t("notSaying")}</option>}
           {list.map((k) => (
             <option key={k} value={k}>
               {e(`${ns}.${k}` as Parameters<typeof e>[0])}
@@ -220,13 +223,20 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
           {(p) => <input {...p} type="number" min={1} max={48} defaultValue={values.durationMonths} className="field" />}
         </Field>
         {enumSelect("genderPreference", t("genderPref"), GENDER_PREFS, "gender", values.genderPreference)}
-        {enumSelect("smoking", r("smoking"), SMOKING, "smoking", values.smoking)}
-        {enumSelect("cleaning", r("cleaning"), CLEANING, "cleaning", values.cleaning)}
-        {enumSelect("sleepSchedule", r("sleep"), SLEEP, "sleep", values.sleepSchedule)}
-        {enumSelect("guests", r("guests"), GUESTS, "guests", values.guests)}
+        <p className="hint sm:col-span-2">{t("lifestyleOptional")}</p>
+        {enumSelect("smoking", r("smoking"), SMOKING, "smoking", values.smoking, false)}
+        {enumSelect("cleaning", r("cleaning"), CLEANING, "cleaning", values.cleaning, false)}
+        {enumSelect("sleepSchedule", r("sleep"), SLEEP, "sleep", values.sleepSchedule, false)}
+        {enumSelect("guests", r("guests"), GUESTS, "guests", values.guests, false)}
+        {enumSelect("noise", r("noise"), NOISE, "noise", values.noise, false)}
         <div className="sm:col-span-2">
           <CheckboxField name="petsOk" label={t("pets")} defaultChecked={values.petsOk} />
         </div>
+      </fieldset>
+
+      <fieldset className="space-y-2">
+        <legend className="t-h3 mb-4">{t("sectionPrivacy")}</legend>
+        <CheckboxField name="showProfile" label={t("showProfile")} hint={t("showProfileHint")} defaultChecked={values.showProfile} />
       </fieldset>
 
       <fieldset className="grid gap-5 sm:grid-cols-2">

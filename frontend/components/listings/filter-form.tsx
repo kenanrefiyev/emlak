@@ -52,7 +52,7 @@ export function FilterForm({ path, filters: f, categories, districts, neighborho
       query[k] = v.trim();
     }
     if (f.sort !== "newest") query.sort = f.sort;
-    if (f.view === "list") query.view = "list";
+    if (f.view !== "grid") query.view = f.view;
     setOpen(false);
     router.push({ pathname: path, query });
   }
@@ -190,14 +190,28 @@ export function FilterForm({ path, filters: f, categories, districts, neighborho
         f.postedWithin ? String(f.postedWithin) : undefined,
       )}
 
+      {sel(
+        "utilities",
+        t("utilities"),
+        [
+          { value: "1", label: t("utilitiesIncluded") },
+          { value: "0", label: t("utilitiesExcluded") },
+        ],
+        f.utilities === "included" ? "1" : f.utilities === "excluded" ? "0" : undefined,
+      )}
+
       <div className="space-y-1">
         <label className="flex min-h-11 cursor-pointer items-center gap-3">
-          <input type="checkbox" name="utilities" value="1" defaultChecked={f.utilitiesIncluded} className="size-5 accent-brand" />
-          <span className="text-[0.9375rem]">{t("utilitiesIncluded")}</span>
+          <input type="checkbox" name="avail" value="1" defaultChecked={f.available} className="size-5 accent-brand" />
+          <span className="text-[0.9375rem]">{t("availableOnly")}</span>
         </label>
         <label className="flex min-h-11 cursor-pointer items-center gap-3">
           <input type="checkbox" name="verified" value="1" defaultChecked={f.verified} className="size-5 accent-brand" />
           <span className="text-[0.9375rem]">{t("verified")}</span>
+        </label>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3">
+          <input type="checkbox" name="vowner" value="1" defaultChecked={f.verifiedOwner} className="size-5 accent-brand" />
+          <span className="text-[0.9375rem]">{t("verifiedOwner")}</span>
         </label>
       </div>
 

@@ -10,7 +10,9 @@ import { matchAds } from "@/lib/matching";
 import { nameOf } from "@/lib/i18n-data";
 import { formatAzn, formatDate } from "@/lib/format";
 import { alternatesFor } from "@/lib/seo";
+import { isRoommateSaved } from "@/server/engagement";
 import { ContactPanel } from "@/components/listings/contact-panel";
+import { SaveRoommateButton } from "@/components/roommates/save-roommate-button";
 import { ReportDialog } from "@/components/listings/report-dialog";
 import { MetroDot } from "@/components/listings/category-tag";
 
@@ -57,6 +59,7 @@ export default async function RoommateDetailPage({ params }: Props) {
         districtId: ad.districtId,
         preferredDistrictIds: ad.preferredDistricts.map((p) => p.districtId),
         moveInDate: ad.moveInDate,
+        durationMonths: ad.durationMonths,
         accommodationType: ad.accommodationType,
         desiredPropertyType: ad.desiredPropertyType,
         availableSpaces: ad.availableSpaces,
@@ -64,8 +67,12 @@ export default async function RoommateDetailPage({ params }: Props) {
         smoking: ad.smoking,
         sleepSchedule: ad.sleepSchedule,
         cleaning: ad.cleaning,
+        noise: ad.noise,
       })
     : null;
+  const saved = !isOwner && isPublic ? await isRoommateSaved(user?.id, ad.id) : false;
+  // The author decides whether their profile details appear on the ad; the owner and admins always see them.
+  const showProfile = ad.showProfile || canManage;
   const status = ad.status === "PUBLISHED" && ad.expiresAt && ad.expiresAt <= new Date() ? "EXPIRED" : ad.status;
 
   const rows = [
@@ -82,11 +89,13 @@ export default async function RoommateDetailPage({ params }: Props) {
     { label: t("genderPref"), value: e(`gender.${ad.genderPreference}`) },
   ].filter((x): x is { label: string; value: string } => Boolean(x));
 
+  const unset = t("notSpecified");
   const lifestyle = [
-    { label: t("smoking"), value: e(`smoking.${ad.smoking}`) },
-    { label: t("cleaning"), value: e(`cleaning.${ad.cleaning}`) },
-    { label: t("sleep"), value: e(`sleep.${ad.sleepSchedule}`) },
-    { label: t("guests"), value: e(`guests.${ad.guests}`) },
+    { label: t("smoking"), value: ad.smoking ? e(`smoking.${ad.smoking}`) : unset },
+    { label: t("cleaning"), value: ad.cleaning ? e(`cleaning.${ad.cleaning}`) : unset },
+    { label: t("sleep"), value: ad.sleepSchedule ? e(`sleep.${ad.sleepSchedule}`) : unset },
+    { label: t("guests"), value: ad.guests ? e(`guests.${ad.guests}`) : unset },
+    { label: t("noise"), value: ad.noise ? e(`noise.${ad.noise}`) : unset },
     { label: t("pets"), value: ad.petsOk ? t("petsOk") : t("petsNo") },
   ];
 
@@ -145,6 +154,10 @@ export default async function RoommateDetailPage({ params }: Props) {
                 </ul>
               )}
               <p className="mt-3 text-[0.8125rem] text-ink-3">{t("matchDisclaimer")}</p>
+              <details className="mt-2 text-[0.8125rem] text-ink-3">
+                <summary className="cursor-pointer font-semibold text-ink-2">{t("matchHowTitle")}</summary>
+                <p className="mt-1">{t("matchHow")}</p>
+              </details>
             </section>
           )}
 
@@ -198,16 +211,26 @@ export default async function RoommateDetailPage({ params }: Props) {
           <div className="rounded-2xl border border-line p-6 sm:p-[30px]">
             <h2 className="text-sm font-semibold text-ink-2">{t("aboutAuthor")}</h2>
             <p className="mt-2 font-display text-lg font-semibold">{ad.owner.name.split(" ")[0]}</p>
-            <ul className="mt-2 space-y-1 text-sm text-ink-2">
-              {ad.owner.profile?.university && <li>{ad.owner.profile.university.shortName}</li>}
-              {ad.owner.profile?.studyYear && <li>{t("studyYear", { year: ad.owner.profile.studyYear })}</li>}
-              {ad.owner.profile?.hometown && (
-                <li>
-                  {t("hometown")}: {ad.owner.profile.hometown}
-                </li>
-              )}
-            </ul>
-            {ad.owner.profile?.bio && <p className="mt-3 border-t border-line pt-3 text-sm text-ink-2">{ad.owner.profile.bio}</p>}
+            {showProfile && (
+              <>
+                <ul className="mt-2 space-y-1 text-sm text-ink-2">
+                  {ad.owner.profile?.university && <li>{ad.owner.profile.university.shortName}</li>}
+                  {ad.owner.profile?.studyYear && <li>{t("studyYear", { year: ad.owner.profile.studyYear })}</li>}
+                  {ad.owner.profile?.hometown && (
+                    <li>
+                      {t("hometown")}: {ad.owner.profile.hometown}
+                    </li>
+                  )}
+                </ul>
+                {ad.owner.profile?.bio && <p className="mt-3 border-t border-line pt-3 text-sm text-ink-2">{ad.owner.profile.bio}</p>}
+              </>
+            )}
+            {canManage && !ad.showProfile && <p className="mt-3 text-sm text-ink-3">{t("profileHiddenNote")}</p>}
+            {!isOwner && isPublic && (
+              <div className="mt-4">
+                <SaveRoommateButton adId={ad.id} initialSaved={saved} loggedIn={Boolean(user)} />
+              </div>
+            )}
           </div>
           <div className="rounded-2xl border border-line p-6 sm:p-[30px]">
             {canManage ? (

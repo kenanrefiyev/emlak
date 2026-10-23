@@ -28,7 +28,12 @@ export interface ListingFilters {
   rooms?: number;
   spaces?: number;
   furnishing?: (typeof FURNISHING)[number];
-  utilitiesIncluded?: boolean;
+  /** Utilities included in the rent, or paid separately. */
+  utilities?: "included" | "excluded";
+  /** Only listings the owner reports as available (not reserved / paused). */
+  available?: boolean;
+  /** Only listings whose landlord or agent passed identity review. */
+  verifiedOwner?: boolean;
   moveIn?: string;
   duration?: number;
   verified?: boolean;
@@ -36,7 +41,7 @@ export interface ListingFilters {
   gender?: (typeof GENDER_PREFS)[number];
   sort: ListingSort;
   page: number;
-  view: "grid" | "list";
+  view: "grid" | "list" | "map";
 }
 
 type Params = URLSearchParams | Record<string, string | string[] | undefined>;
@@ -87,7 +92,9 @@ export function parseListingFilters(params: Params, segment?: Segment): ListingF
     rooms: int(get("rooms"), 1, 4),
     spaces: int(get("spaces"), 1, 10),
     furnishing: oneOf(get("furnishing"), FURNISHING),
-    utilitiesIncluded: get("utilities") === "1" || undefined,
+    utilities: get("utilities") === "1" ? "included" : get("utilities") === "0" ? "excluded" : undefined,
+    available: get("avail") === "1" || undefined,
+    verifiedOwner: get("vowner") === "1" || undefined,
     moveIn: moveIn && /^\d{4}-\d{2}-\d{2}$/.test(moveIn) && !Number.isNaN(Date.parse(moveIn)) ? moveIn : undefined,
     duration: int(get("duration"), 1, 36),
     verified: get("verified") === "1" || undefined,
@@ -95,7 +102,7 @@ export function parseListingFilters(params: Params, segment?: Segment): ListingF
     gender: oneOf(get("gender"), GENDER_PREFS),
     sort: oneOf(get("sort"), LISTING_SORTS) ?? "newest",
     page: int(get("page"), 1, 500) ?? 1,
-    view: get("view") === "list" ? "list" : "grid",
+    view: get("view") === "list" ? "list" : get("view") === "map" ? "map" : "grid",
   };
 }
 
@@ -113,14 +120,16 @@ export function listingFiltersToQuery(f: Partial<ListingFilters>): string {
   if (f.rooms) p.set("rooms", String(f.rooms));
   if (f.spaces) p.set("spaces", String(f.spaces));
   if (f.furnishing) p.set("furnishing", f.furnishing);
-  if (f.utilitiesIncluded) p.set("utilities", "1");
+  if (f.utilities) p.set("utilities", f.utilities === "included" ? "1" : "0");
+  if (f.available) p.set("avail", "1");
+  if (f.verifiedOwner) p.set("vowner", "1");
   if (f.moveIn) p.set("movein", f.moveIn);
   if (f.duration) p.set("duration", String(f.duration));
   if (f.verified) p.set("verified", "1");
   if (f.postedWithin) p.set("posted", String(f.postedWithin));
   if (f.gender && f.gender !== "ANY") p.set("gender", f.gender);
   if (f.sort && f.sort !== "newest") p.set("sort", f.sort);
-  if (f.view === "list") p.set("view", "list");
+  if (f.view && f.view !== "grid") p.set("view", f.view);
   if (f.page && f.page > 1) p.set("page", String(f.page));
   return p.toString();
 }
@@ -138,7 +147,9 @@ export const LISTING_FILTER_KEYS = [
   "rooms",
   "spaces",
   "furnishing",
-  "utilitiesIncluded",
+  "utilities",
+  "available",
+  "verifiedOwner",
   "moveIn",
   "duration",
   "verified",

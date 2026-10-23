@@ -22,7 +22,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { getCurrentUser } from "@/server/auth/current";
-import { getListingDetail, pickTranslation, similarListings, nearbyListings } from "@/server/listings/queries";
+import { getListingDetail, pickTranslation, similarListings, nearbyListings, universitiesNear } from "@/server/listings/queries";
 import { savedIdsFor } from "@/server/engagement";
 import { nameOf } from "@/lib/i18n-data";
 import { formatAzn, formatDate } from "@/lib/format";
@@ -40,6 +40,8 @@ import { MetroDot } from "@/components/listings/category-tag";
 import { AmenityIcon } from "@/components/listings/amenity-icon";
 import { SectionHead } from "@/components/site/section";
 import { NearbyMap } from "@/components/listings/nearby-map";
+import { CostBreakdown } from "@/components/listings/cost-breakdown";
+import { CONFIRM_STALE_DAYS } from "@/lib/domain";
 
 type Props = { params: Promise<{ locale: AppLocale; id: string }> };
 
@@ -96,11 +98,15 @@ export default async function ListingPage({ params }: Props) {
   ]);
   const tr = pickTranslation(l.translations, locale)!;
   const shared = SHARED_CATEGORIES.includes(l.category);
-  const [similar, saved, nearby] = await Promise.all([
+  const [similar, saved, nearby, nearUnis] = await Promise.all([
     isPublic ? similarListings(locale, l) : Promise.resolve([]),
     savedIdsFor(user?.id, [l.id]),
     nearbyListings(locale, l),
+    universitiesNear(l, locale),
   ]);
+  const km = (v: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(Math.max(0.1, v));
+  // The tagged university is listed first when it is near; others come from distance alone.
+  const otherUnis = nearUnis.filter((u) => u.slug !== (uniNear ? l.university?.slug : undefined));
   const similarSaved = await savedIdsFor(user?.id, similar.map((s) => s.id));
   const isOwner = user?.id === l.ownerId;
   const byAgent = l.owner.role === "AGENT";
@@ -139,7 +145,7 @@ export default async function ListingPage({ params }: Props) {
     { label: t("heating"), value: e(`heating.${l.heating}`) },
     { label: t("airConditioning"), value: l.airConditioning ? c("yes") : c("no") },
     ...(shared ? [{ label: t("gender"), value: e(`gender.${l.genderPreference}`) }] : []),
-    { label: t("deposit"), value: l.deposit ? formatAzn(l.deposit, locale) : t("noDeposit") },
+    { label: t("deposit"), value: l.deposit == null ? t("depositUnknown") : l.deposit === 0 ? t("noDeposit") : formatAzn(l.deposit, locale) },
     {
       label: t("commission"),
       value:
@@ -212,6 +218,9 @@ export default async function ListingPage({ params }: Props) {
                   {c("demo")}
                 </li>
               )}
+              {isPublic && (
+                <li className={`tag ${l.availability === "AVAILABLE" ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn"}`}>{e(`availability.${l.availability}`)}</li>
+              )}
             </ul>
             <h1 className="t-display" lang={tr.locale}>
               {tr.title}
@@ -282,7 +291,17 @@ export default async function ListingPage({ params }: Props) {
                 </p>
               </div>
             )}
-            {l.publishedAt && <p className="mt-4 text-sm text-ink-3">{c("postedOn", { date: formatDate(l.publishedAt, locale) })}</p>}
+            <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-3">
+              {l.publishedAt && <span>{c("postedOn", { date: formatDate(l.publishedAt, locale) })}</span>}
+              <span>{t("lastUpdated", { date: formatDate(l.updatedAt, locale) })}</span>
+              {l.availabilityConfirmedAt ? (
+                <span className={now.getTime() - l.availabilityConfirmedAt.getTime() > CONFIRM_STALE_DAYS * 86_400_000 ? "text-warn" : "text-ok"}>
+                  {t("availabilityConfirmed", { date: formatDate(l.availabilityConfirmedAt, locale) })}
+                </span>
+              ) : (
+                <span>{t("availabilityNotConfirmed")}</span>
+              )}
+            </p>
           </Section>
 
           <Section id="ov-h" title={t("overview")}>
@@ -310,6 +329,10 @@ export default async function ListingPage({ params }: Props) {
                 </div>
               ))}
             </dl>
+          </Section>
+
+          <Section id="cost-h" title={t("costsTitle")}>
+            <CostBreakdown listing={l} otherNote={l.otherCostsNote} locale={locale} />
           </Section>
 
           {l.amenities.length > 0 && (
@@ -359,9 +382,24 @@ export default async function ListingPage({ params }: Props) {
                     <Link href={`/students?uni=${l.university.slug}`} className="text-brand hover:underline">
                       {l.university.shortName} — {nameOf(l.university, locale)}
                     </Link>
-                    {uniNear.km !== null && (
-                      <span className="text-ink-2"> · ≈{new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(Math.max(0.1, uniNear.km))} km</span>
-                    )}
+                    {uniNear.km !== null && <span className="text-ink-2"> · ≈{km(uniNear.km)} km</span>}
+                  </dd>
+                </div>
+              )}
+              {otherUnis.length > 0 && (
+                <div className="flex gap-4 sm:col-span-2">
+                  <dt className="w-36 shrink-0 font-semibold">{t("otherUniversities")}</dt>
+                  <dd>
+                    <ul className="flex flex-wrap gap-x-4 gap-y-1">
+                      {otherUnis.map((u) => (
+                        <li key={u.slug}>
+                          <Link href={`/students?uni=${u.slug}`} className="text-brand hover:underline" title={u.name}>
+                            {u.shortName}
+                          </Link>
+                          <span className="text-ink-2"> · ≈{km(u.km)} km</span>
+                        </li>
+                      ))}
+                    </ul>
                   </dd>
                 </div>
               )}

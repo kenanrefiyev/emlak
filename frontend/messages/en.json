@@ -35,7 +35,9 @@
     "closeMenu": "Close menu",
     "language": "Language",
     "skipToContent": "Skip to content",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "notifications": "Notifications",
+    "notificationsCount": "{count, plural, one {Notifications: # new} other {Notifications: # new}}"
   },
   "common": {
     "search": "Search",
@@ -235,6 +237,16 @@
       "OWNER": "Landlord",
       "AGENT": "Agent",
       "ADMIN": "Administrator"
+    },
+    "availability": {
+      "AVAILABLE": "Available",
+      "TEMPORARILY_UNAVAILABLE": "Temporarily unavailable",
+      "RESERVED": "Reserved"
+    },
+    "noise": {
+      "QUIET": "I want a quiet home",
+      "MODERATE": "Moderate noise is fine",
+      "LIVELY": "Noise doesn't bother me"
     }
   },
   "home": {
@@ -381,7 +393,15 @@
     "saveSearchName": "Search name",
     "saveSearchDone": "Search saved",
     "loginToSave": "Sign in to save searches",
-    "perPlaceNote": "Some prices are per place, others for the whole flat — each card says which."
+    "perPlaceNote": "Some prices are per place, others for the whole flat — each card says which.",
+    "utilities": "Utilities",
+    "utilitiesExcluded": "Utilities paid separately",
+    "availableOnly": "Only currently available",
+    "verifiedOwner": "Only verified landlords / agents",
+    "viewMap": "Map",
+    "mapOpen": "Open listing",
+    "mapNote": "The map shows the approximate area (metro station, neighbourhood or district centre), not the address.",
+    "mapCapped": "The map shows the first {count} listings — narrow the filters to see the rest."
   },
   "card": {
     "save": "Save",
@@ -397,7 +417,9 @@
     "metaArea": "Area",
     "metaSpaces": "Free",
     "metaResidents": "Living",
-    "metaUni": "Uni"
+    "metaUni": "Uni",
+    "totalWithCosts": "≈ {total}/mo with costs",
+    "utilitiesIncluded": "Utilities included"
   },
   "listing": {
     "breadcrumbs": "Breadcrumbs",
@@ -470,7 +492,13 @@
     "features": "Features",
     "address": "Address",
     "rules": "House rules and conditions",
-    "verifiedLandlord": "Verified landlord"
+    "verifiedLandlord": "Verified landlord",
+    "costsTitle": "Total rental cost",
+    "depositUnknown": "Unknown",
+    "lastUpdated": "Last updated: {date}",
+    "availabilityConfirmed": "Availability confirmed: {date}",
+    "availabilityNotConfirmed": "Availability not confirmed yet",
+    "otherUniversities": "Universities nearby"
   },
   "roommates": {
     "heading": "Find a roommate",
@@ -519,7 +547,7 @@
     "match": "{score}% match",
     "matchTitle": "Match: {score}%",
     "matchExplain": "Compared with your active ad.",
-    "matchDisclaimer": "The match score only compares budget, area, dates, home type and household habits. It does not predict whether people will get along.",
+    "matchDisclaimer": "The match score only compares budget, area, move-in date, length of stay, home type and household habits. It does not predict whether people will get along.",
     "matchHowLink": "How is it calculated?",
     "matchNeedAd": "Post your own roommate ad to see match scores.",
     "reasons": {
@@ -532,10 +560,21 @@
       "spaces": "Enough places",
       "smoking": "Smoking compatible",
       "sleep": "Sleep schedules fit",
-      "cleaning": "Cleaning habits fit"
+      "cleaning": "Cleaning habits fit",
+      "duration": "Similar length of stay",
+      "durationNear": "Roughly similar length of stay",
+      "noise": "Similar noise expectations"
     },
     "posted": "{date}",
-    "originalLanguage": "Written {language}."
+    "originalLanguage": "Written {language}.",
+    "notSpecified": "Not specified",
+    "noise": "Noise",
+    "matchHowTitle": "How is the score calculated?",
+    "matchHow": "Budget 30 points, area 20, move-in date 15, length of stay 10, home type and free places 10, household habits 15 (smoking, sleep, cleaning, noise — only when both people answered). Unanswered questions add no points and do not count as a mismatch.",
+    "profileHiddenNote": "Your profile details (university, year, hometown, bio) are not shown to others on this ad.",
+    "saveProfile": "Save profile",
+    "unsaveProfile": "Saved",
+    "saveFailed": "Could not save — please try again."
   },
   "roommateForm": {
     "titleNew": "Roommate ad",
@@ -578,7 +617,12 @@
     "submit": "Send for review",
     "submitEdit": "Save and send for review",
     "created": "Your ad was sent for review and will go live once approved.",
-    "updated": "Changes saved. The ad was sent for review again."
+    "updated": "Changes saved. The ad was sent for review again.",
+    "notSaying": "Prefer not to say",
+    "lifestyleOptional": "These questions are optional. Unanswered questions are left out of the match score.",
+    "sectionPrivacy": "Privacy",
+    "showProfile": "Show my profile details on the ad",
+    "showProfileHint": "University, year of study, hometown and bio. Your phone number is never shown on the ad."
   },
   "listingForm": {
     "titleNew": "Post a rental",
@@ -717,7 +761,8 @@
       "searches": "Saved searches",
       "profile": "Profile",
       "security": "Security",
-      "dashboard": "Listings dashboard"
+      "dashboard": "Listings dashboard",
+      "notifications": "Notifications"
     },
     "overviewListings": "Rental listings",
     "overviewRoommates": "Roommate ads",
@@ -792,7 +837,8 @@
     "deleteAccountConfirm": "Enter your password to confirm",
     "emailUnverified": "Not confirmed",
     "emailVerified": "Confirmed",
-    "role": "Account type"
+    "role": "Account type",
+    "savedRoommates": "Saved roommate profiles"
   },
   "agent": {
     "title": "Agent dashboard",
@@ -1262,7 +1308,8 @@
       "relist": "Relist",
       "feature": "Make VIP",
       "deactivate": "Deactivate",
-      "delete": "Delete"
+      "delete": "Delete",
+      "reconfirm": "Still available"
     },
     "confirm": {
       "rented": "Mark this listing as rented? It leaves search; you can relist it later.",
@@ -1276,7 +1323,8 @@
       "price": "Price",
       "views": "Views",
       "inquiries": "Inquiries",
-      "dates": "Dates"
+      "dates": "Dates",
+      "saves": "Saves"
     },
     "select": "Select: {title}",
     "bulk": {
@@ -1293,8 +1341,10 @@
         "renew": "Extend {count, plural, one {# listing} other {# listings}}?",
         "rented": "Mark {count, plural, one {# listing} other {# listings}} as rented?",
         "archive": "Deactivate {count, plural, one {# listing} other {# listings}}?",
-        "delete": "{count, plural, one {# listing} other {# listings}} will be deleted permanently. This cannot be undone."
-      }
+        "delete": "{count, plural, one {# listing} other {# listings}} will be deleted permanently. This cannot be undone.",
+        "reconfirm": "Confirm that {count, plural, one {# listing is} other {# listings are}} still available?"
+      },
+      "reconfirm": "Confirm availability"
     },
     "verifiedListing": "Verified",
     "noPhotos": "no photos",
@@ -1374,7 +1424,18 @@
       "statusNote": "You can change the listing's status from My listings.",
       "openPublicPreview": "Open the public page in a new window",
       "draftFound": "There is an unfinished listing draft on this device.",
-      "restoreDraft": "Restore draft"
+      "restoreDraft": "Restore draft",
+      "depositHint": "Leave empty to show \"unknown\". Enter 0 if there is no deposit.",
+      "costsTitle": "Extra monthly costs",
+      "costsLead": "Fill these in so students see the full cost. An empty field is shown as \"Unknown\" on the listing; enter 0 if there is no such cost.",
+      "utilitiesCost": "Utilities (estimate, ₼/month)",
+      "utilitiesCostHint": "For the whole home. Leave empty if utilities are included in the rent.",
+      "internetCost": "Internet (₼/month)",
+      "otherCosts": "Other monthly costs (₼)",
+      "otherCostsNote": "What are the other costs?",
+      "otherCostsNotePlaceholder": "e.g. building service, lift",
+      "costSharers": "How many people share these costs?",
+      "costSharersHint": "Used for the per-person estimate. Leave empty if unknown."
     },
     "inquiries": {
       "leadLandlord": "Inquiries about your listings. Only you see the stage and notes.",
@@ -1531,6 +1592,48 @@
       "status": "Status",
       "period": "Period",
       "price": "Price"
-    }
+    },
+    "staleTitle": "{count, plural, one {# listing needs confirming} other {# listings need confirming}}",
+    "staleLead": "You haven't confirmed these listings are still available for over 14 days. Confirm them or mark them as rented so students don't waste time on stale listings.",
+    "confirmedOn": "Confirmed: {date}",
+    "needsConfirmation": "Confirm it's still available",
+    "availabilityLabel": "Status:",
+    "availabilitySaved": "Saved"
+  },
+  "costs": {
+    "monthlyTitle": "Monthly costs",
+    "upfrontTitle": "Upfront payment when moving in",
+    "rent": "Rent (whole home)",
+    "rentPerPlace": "Rent (one place)",
+    "utilities": "Utilities",
+    "internet": "Internet",
+    "other": "Other monthly costs",
+    "otherWithNote": "Other: {note}",
+    "monthlyTotal": "Estimated monthly total",
+    "monthlyTotalPlace": "Your estimated monthly share",
+    "perPerson": "Split between {count}, per person",
+    "firstMonth": "First month’s rent",
+    "deposit": "Deposit",
+    "commission": "Agent commission",
+    "upfrontTotal": "Estimated upfront total",
+    "included": "Included in rent",
+    "none": "None",
+    "unknown": "Unknown",
+    "atLeast": "at least {value}",
+    "sharersUnknown": "The number of people sharing the running costs is not stated, so your share could not be calculated.",
+    "note": "An estimate based on the amounts the owner entered. Costs marked \"Unknown\" are left out of the total — ask the owner to confirm them."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "lead": "Incoming requests, replies to your requests and new listings that match your saved searches.",
+    "emptyTitle": "No notifications yet",
+    "emptyBody": "Save a search — when a matching listing is published, you'll see it here.",
+    "manageSearches": "Saved searches",
+    "new": "New",
+    "searchMatch": "New listing for your search \"{search}\": {title}",
+    "inquiryReceived": "{name} sent you a request: {title}",
+    "inquiryAccepted": "{name} accepted your request: {title}",
+    "inquiryDeclined": "{name} declined your request: {title}",
+    "channelNote": "Notifications are shown on the site only. New requests are also sent by email."
   }
 }

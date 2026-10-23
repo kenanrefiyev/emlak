@@ -9,6 +9,7 @@ import { fieldErrorsOf } from "@/lib/validation/helpers";
 import { publicListingWhere } from "@/server/listings/queries";
 import { publicRoommateWhere } from "@/server/roommates/queries";
 import { recordListingEvent, type Actor } from "@/server/listings/service";
+import { notify } from "@/server/notifications";
 import type { AppLocale } from "@/i18n/routing";
 
 const HOUR = 3_600_000;
@@ -35,6 +36,24 @@ export async function savedIdsFor(userId: string | undefined, listingIds: string
   if (!userId || !listingIds.length) return new Set();
   const rows = await db.savedListing.findMany({ where: { userId, listingId: { in: listingIds } }, select: { listingId: true } });
   return new Set(rows.map((r) => r.listingId));
+}
+
+// ───────────── saved roommate ads ─────────────
+
+export async function setSavedRoommate(userId: string, roommateAdId: string, saved: boolean) {
+  if (saved) {
+    const ad = await db.roommateAd.findFirst({ where: { id: roommateAdId, ...publicRoommateWhere() }, select: { ownerId: true } });
+    if (!ad) throw new ServiceError("not_found");
+    if (ad.ownerId === userId) throw new ServiceError("own_item");
+    await db.savedRoommateAd.createMany({ data: [{ userId, roommateAdId }], skipDuplicates: true });
+  } else {
+    await db.savedRoommateAd.deleteMany({ where: { userId, roommateAdId } });
+  }
+}
+
+export async function isRoommateSaved(userId: string | undefined, roommateAdId: string) {
+  if (!userId) return false;
+  return Boolean(await db.savedRoommateAd.findUnique({ where: { userId_roommateAdId: { userId, roommateAdId } }, select: { userId: true } }));
 }
 
 // ───────────── contact requests ─────────────
@@ -79,9 +98,20 @@ export async function createContactRequest(
 
   const request = await db.contactRequest.create({
     data: { senderId: sender.id, recipientId, listingId: listingId ?? null, roommateAdId: roommateAdId ?? null, message },
-    select: { id: true, recipient: { select: { email: true, preferredLocale: true } } },
+    select: {
+      id: true,
+      recipient: { select: { email: true, preferredLocale: true, role: true } },
+      listing: { select: { translations: { select: { locale: true, title: true, isOriginal: true } } } },
+      roommateAd: { select: { title: true } },
+    },
   });
   if (listingId) await recordListingEvent(listingId, "CONTACT_REQUEST", sender.id);
+  // Landlords and agents work listing inquiries from the dashboard; everyone else from /account/requests.
+  const inbox = listingId && request.recipient.role !== "USER" ? "/dashboard/inquiries" : "/account/requests";
+  await notify(recipientId, "INQUIRY_RECEIVED", inbox, `inquiry:${request.id}`, {
+    name: sender.name.split(" ")[0] ?? sender.name,
+    titles: targetTitles(request),
+  }).catch(() => undefined);
   const mail = await sendMail({
     to: request.recipient.email,
     subject: ctx.copy.subject,
@@ -90,14 +120,34 @@ export async function createContactRequest(
   return { id: request.id, emailDelivered: mail.delivered };
 }
 
+/** Title of the listing (per language, original marked with *) or roommate ad a request is about. */
+function targetTitles(r: { listing: { translations: { locale: string; title: string; isOriginal: boolean }[] } | null; roommateAd: { title: string } | null }) {
+  if (r.listing) return Object.fromEntries(r.listing.translations.map((t) => [t.isOriginal ? `${t.locale}*` : t.locale, t.title]));
+  return r.roommateAd ? { "*": r.roommateAd.title } : {};
+}
+
 export async function respondToContact(userId: string, requestId: string, accept: boolean) {
-  const req = await db.contactRequest.findUnique({ where: { id: requestId }, select: { recipientId: true, status: true } });
+  const req = await db.contactRequest.findUnique({
+    where: { id: requestId },
+    select: {
+      recipientId: true,
+      senderId: true,
+      status: true,
+      recipient: { select: { name: true } },
+      listing: { select: { translations: { select: { locale: true, title: true, isOriginal: true } } } },
+      roommateAd: { select: { title: true } },
+    },
+  });
   if (!req || req.recipientId !== userId) throw new ServiceError("not_found");
   if (req.status !== "PENDING") throw new ServiceError("bad_status");
   await db.contactRequest.update({
     where: { id: requestId },
     data: { status: accept ? "ACCEPTED" : "DECLINED", respondedAt: new Date(), readAt: new Date() },
   });
+  await notify(req.senderId, accept ? "INQUIRY_ACCEPTED" : "INQUIRY_DECLINED", "/account/requests", `response:${requestId}`, {
+    name: req.recipient.name.split(" ")[0] ?? req.recipient.name,
+    titles: targetTitles(req),
+  }).catch(() => undefined);
 }
 
 export async function markRequestsRead(userId: string) {
