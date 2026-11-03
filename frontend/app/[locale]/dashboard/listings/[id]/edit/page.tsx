@@ -9,6 +9,8 @@ import { db } from "@/server/db";
 import { ownerStatusOf } from "@/server/dashboard";
 import { isoDay } from "@/lib/format";
 import { ListingWizard } from "@/components/dashboard/listing-wizard";
+import { displayCurrencies } from "@/server/money";
+import { countryChoices } from "@/server/countries";
 import { ListingStatusBadge } from "@/components/dashboard/lead-badge";
 
 const STEPS = ["basics", "location", "details", "conditions", "photos", "contact", "review"] as const;
@@ -21,13 +23,24 @@ export default async function EditListingPage({ params, searchParams }: Props) {
   if (!/^[a-z0-9]{10,40}$/.test(id)) notFound();
   const listing = await db.listing.findUnique({
     where: { id },
-    include: { translations: true, images: { orderBy: { position: "asc" } }, amenities: true },
+    include: {
+      translations: true,
+      images: { orderBy: { position: "asc" } },
+      amenities: true,
+      district: { select: { city: { select: { country: { select: { code: true } } } } } },
+    },
   });
   // Another user's listing looks exactly like a missing one.
   if (!listing || (listing.ownerId !== user.id && user.role !== "ADMIN")) notFound();
   const sp = await searchParams;
   const step = (STEPS as readonly string[]).includes(sp.step ?? "") ? (sp.step as (typeof STEPS)[number]) : "basics";
-  const [t, options, settings] = await Promise.all([getTranslations({ locale, namespace: "dashboard" }), getLocationOptions(locale, "id"), getSettings()]);
+  const [t, options, settings, currencies, countries] = await Promise.all([
+    getTranslations({ locale, namespace: "dashboard" }),
+    getLocationOptions(locale, "id"),
+    getSettings(),
+    displayCurrencies(),
+    countryChoices(locale),
+  ]);
   const original = listing.translations.find((x) => x.isOriginal) ?? listing.translations[0];
   const status = ownerStatusOf(listing);
 
@@ -40,6 +53,9 @@ export default async function EditListingPage({ params, searchParams }: Props) {
       <p className="mt-1 mb-6 line-clamp-1 text-ink-2">{original?.title}</p>
       <ListingWizard
         listingId={listing.id}
+        currencies={currencies}
+        countries={countries}
+        defaultCountry={listing.district.city.country.code}
         initialStep={step}
         justCreated={sp.created === "1"}
         status={status}

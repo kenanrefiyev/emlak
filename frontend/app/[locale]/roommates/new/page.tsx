@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { toPublicPath } from "@/i18n/paths";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
 import { requireUser } from "@/server/auth/current";
 import { getLocationOptions } from "@/server/locations";
+import { countryChoices, getCurrentCountry } from "@/server/countries";
 import { RoommateForm } from "@/components/roommates/roommate-form";
 import { isoDay } from "@/lib/format";
 import { daysFromNow } from "@/lib/time";
@@ -18,8 +20,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function NewRoommatePage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await requireUser(locale, `/${locale}/roommates/new`);
-  const [t, options] = await Promise.all([getTranslations({ locale, namespace: "roommateForm" }), getLocationOptions(locale, "id")]);
+  await requireUser(locale, `/${locale}${toPublicPath("/roommates/new", locale)}`);
+  // New ads start in the visitor's selected market; the author can pick another in the form.
+  const [t, options, countries, market] = await Promise.all([
+    getTranslations({ locale, namespace: "roommateForm" }),
+    getLocationOptions(locale, "id"),
+    countryChoices(locale),
+    getCurrentCountry(),
+  ]);
   return (
     <div className="shell max-w-3xl pt-8">
       <span className="hidden" aria-hidden />
@@ -27,6 +35,8 @@ export default async function NewRoommatePage({ params }: Props) {
       <p className="mt-2 mb-8 text-ink-2">{t("lead")}</p>
       <RoommateForm
         options={options}
+        countries={countries}
+        defaultCountry={market.code}
         values={{
           type: "HAS_PLACE",
           title: "",

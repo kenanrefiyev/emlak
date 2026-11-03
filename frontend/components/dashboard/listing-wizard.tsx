@@ -26,9 +26,11 @@ import {
   WHOLE_UNIT_CATEGORIES,
   type ListingCategory,
 } from "@/lib/domain";
-import { approxPosition, distanceKm, UNIVERSITY_COORDS } from "@/lib/baku-geo";
+import { approxPosition, distanceKm, universityPosition } from "@/lib/baku-geo";
 import type { LocationOptions } from "@/server/locations";
-import { locales } from "@/i18n/routing";
+import { GroupedOptions } from "@/components/forms/grouped-options";
+import { locales, type AppLocale } from "@/i18n/routing";
+import { amountScale, currencySymbol, formatMoney } from "@/lib/money";
 import type { ActionState } from "@/server/errors";
 
 export interface WizardValues {
@@ -39,6 +41,8 @@ export interface WizardValues {
   paymentTerms: string;
   rules: string;
   originalLocale: string;
+  /** ISO 4217 currency of every amount in the listing. */
+  currency: string;
   monthlyRent: number | "";
   pricePerPlace: boolean;
   deposit: number | null;
@@ -96,6 +100,7 @@ const FIELD_STEP: Record<string, StepKey> = {
   title: "basics",
   description: "basics",
   originalLocale: "basics",
+  currency: "basics",
   monthlyRent: "basics",
   pricePerPlace: "basics",
   districtId: "location",
@@ -197,6 +202,9 @@ export function ListingWizard({
   isAgent,
   translations,
   justCreated,
+  currencies,
+  countries,
+  defaultCountry,
 }: {
   listingId?: string;
   values: WizardValues;
@@ -210,6 +218,12 @@ export function ListingWizard({
   isAgent: boolean;
   translations?: { locale: string; title: string; description: string; paymentTerms: string | null }[];
   justCreated?: boolean;
+  /** Currencies a listing may be priced in (those of the active markets). */
+  currencies: string[];
+  /** Markets the listing can be in; `options` holds the places of all of them. */
+  countries: { code: string; name: string; currency: string; latitude: number | null; longitude: number | null }[];
+  /** Country preselected for a new listing (the visitor's market). */
+  defaultCountry: string;
 }) {
   const t = useTranslations("dashboard.wizard");
   const lf = useTranslations("listingForm");
@@ -230,6 +244,40 @@ export function ListingWizard({
   const [neighborhood, setNeighborhood] = useState(values.neighborhoodId ?? "");
   const [metro, setMetro] = useState(values.metroStationId ?? "");
   const [university, setUniversity] = useState(values.universityId ?? "");
+  // Country and city only narrow the place lists; the district implies both, so neither is stored.
+  const districtOf = (v: string) => options.districts.find((d) => d.value === v);
+  const cityOf = (v: string | undefined) => options.cities.find((c) => c.value === v);
+  const [country, setCountry] = useState(cityOf(districtOf(values.districtId)?.cityValue)?.country ?? defaultCountry);
+  const [city, setCity] = useState(districtOf(values.districtId)?.cityValue ?? "");
+  const countryCities = options.cities.filter((c) => c.country === country);
+  const placeDistricts = options.districts.filter((d) => (city ? d.cityValue === city : countryCities.some((c) => c.value === d.cityValue)));
+  // Every amount field is in this currency; limits stretch with its scale (see amountScale).
+  // It follows the chosen country until the owner picks one themselves.
+  const [currency, setCurrency] = useState(values.currency);
+  const [currencyChosen, setCurrencyChosen] = useState(false);
+  const clearPlace = () => {
+    setDistrict("");
+    setNeighborhood("");
+    setMetro("");
+    setUniversity("");
+  };
+  const changeCountry = (code: string) => {
+    setCountry(code);
+    setCity("");
+    clearPlace();
+    const next = countries.find((c) => c.code === code)?.currency;
+    if (!currencyChosen && next) setCurrency(next);
+  };
+  const changeCity = (value: string) => {
+    setCity(value);
+    if (value && districtOf(district)?.cityValue !== value) clearPlace();
+  };
+  const sym = { currency: currencySymbol(currency) };
+  const scale = amountScale(currency);
+  // Metro stations and universities are offered only from the district's city.
+  const districtCity = options.districts.find((d) => d.value === district)?.cityValue;
+  const cityMetros = options.metros.filter((m) => !districtCity || m.cityValue === districtCity);
+  const cityUniversities = options.universities.filter((u) => !districtCity || u.cityValue === districtCity);
   const [commission, setCommission] = useState(values.commissionType);
   const [contactPref, setContactPref] = useState(values.contactPreference);
   const [missing, setMissing] = useState<string[]>([]);
@@ -279,11 +327,14 @@ export function ListingWizard({
     }
     const str = (k: string) => (typeof saved![k] === "string" ? (saved![k] as string) : "");
     if (str("category")) setCategory(str("category") as ListingCategory);
+    if (str("country")) setCountry(str("country"));
+    setCity(str("city"));
     setDistrict(str("districtId"));
     setNeighborhood(str("neighborhoodId"));
     setMetro(str("metroStationId"));
     setUniversity(str("universityId"));
     if (str("commissionType")) setCommission(str("commissionType"));
+    if (str("currency")) setCurrency(str("currency"));
     if (str("contactPreference")) setContactPref(str("contactPreference"));
     setRestored(true);
     setDismissed(true);
@@ -335,7 +386,7 @@ export function ListingWizard({
     if (s === "basics") {
       if (v("title").length < 10) miss.push(lf("title"));
       if (v("description").length < 40) miss.push(lf("description"));
-      if (!v("monthlyRent") || num("monthlyRent") < 30 || num("monthlyRent") > 20000) miss.push(lf("monthlyRent"));
+      if (!v("monthlyRent") || num("monthlyRent") < 30 * scale || num("monthlyRent") > 20000 * scale) miss.push(lf("monthlyRent", sym));
     }
     if (s === "location" && !v("districtId")) miss.push(lf("district"));
     if (s === "details") {
@@ -383,23 +434,26 @@ export function ListingWizard({
   };
 
   // ── location helpers: approximate map point and nearest universities ──
-  const slugOf = <T extends { value: string; slug: string }>(list: T[], v: string) => list.find((o) => o.value === v)?.slug;
-  const districtSlug = slugOf(options.districts, district);
-  const center = useMemo(
-    () =>
-      approxPosition({
-        metroStation: metro ? { slug: slugOf(options.metros, metro) ?? "", latitude: null, longitude: null } : null,
-        neighborhood: neighborhood ? { slug: slugOf(options.neighborhoods, neighborhood) ?? "", latitude: null, longitude: null } : null,
-        university: university ? { slug: slugOf(options.universities, university) ?? "", latitude: null, longitude: null } : null,
-        district: { slug: districtSlug ?? "" },
-      }),
+  const center = useMemo(() => {
+    const place = (o?: { slug: string; latitude: number | null; longitude: number | null }) => (o ? { slug: o.slug, latitude: o.latitude, longitude: o.longitude } : null);
+    const d = districtOf(district);
+    const c = cityOf(d?.cityValue ?? city);
+    const market = countries.find((x) => x.code === country);
+    return approxPosition({
+      metroStation: place(options.metros.find((o) => o.value === metro)),
+      neighborhood: place(options.neighborhoods.find((o) => o.value === neighborhood)),
+      university: place(options.universities.find((o) => o.value === university)),
+      district: { ...(place(d) ?? { slug: "" }), city: c ?? market ?? null },
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [metro, neighborhood, university, districtSlug],
-  );
+  }, [metro, neighborhood, university, district, city, country]);
   const nearestUnis = useMemo(
     () =>
       options.universities
-        .map((u) => ({ label: u.short, slug: u.slug, km: UNIVERSITY_COORDS[u.slug] ? distanceKm(center, UNIVERSITY_COORDS[u.slug]!) : null }))
+        .map((u) => {
+          const at = universityPosition(u);
+          return { label: u.short, slug: u.slug, km: at ? distanceKm(center, at) : null };
+        })
         .filter((u): u is { label: string; slug: string; km: number } => u.km !== null)
         .sort((a, b) => a.km - b.km)
         .slice(0, 3),
@@ -555,7 +609,26 @@ export function ListingWizard({
               {(p) => <textarea {...p} defaultValue={values.description} rows={7} maxLength={5000} className="field" />}
             </Field>
             <div className={grid}>
-              {num("monthlyRent", t("monthlyRentAzn"), { min: 30, max: 20000, required: true })}
+              {num("monthlyRent", t("monthlyRentAzn", sym), { min: 30 * scale, max: 20000 * scale, required: true })}
+              <Field name="currency" label={t("currency")} hint={t("currencyHint")} required>
+                {(p) => (
+                  <select
+                    {...p}
+                    value={currency}
+                    onChange={(ev) => {
+                      setCurrency(ev.target.value);
+                      setCurrencyChosen(true);
+                    }}
+                    className="field"
+                  >
+                    {currencies.map((code) => (
+                      <option key={code} value={code}>
+                        {currencySymbol(code)} {code}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
               <Field name="originalLocale" label={lf("language")}>
                 {(p) => (
                   <select {...p} defaultValue={values.originalLocale} className="field">
@@ -578,23 +651,48 @@ export function ListingWizard({
           {/* 2 — location */}
           <div {...panel("location")} className="space-y-6">
             <div className={grid}>
+              <Field name="country" label={lf("country")} required>
+                {(p) => (
+                  <select {...p} value={country} onChange={(ev) => changeCountry(ev.target.value)} className="field">
+                    {countries.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              <Field name="city" label={lf("city")}>
+                {(p) => (
+                  <select {...p} value={city} onChange={(ev) => changeCity(ev.target.value)} className="field">
+                    <option value="">—</option>
+                    {countryCities.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
               <Field name="districtId" label={lf("district")} required>
                 {(p) => (
                   <select
                     {...p}
                     value={district}
                     onChange={(ev) => {
-                      setDistrict(ev.target.value);
+                      const next = ev.target.value;
+                      if (options.districts.find((d) => d.value === next)?.cityValue !== districtCity) {
+                        setMetro("");
+                        setUniversity("");
+                      }
+                      setDistrict(next);
+                      if (next) setCity(districtOf(next)?.cityValue ?? city);
                       setNeighborhood("");
                     }}
                     className="field"
                   >
                     <option value="">—</option>
-                    {options.districts.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
+                    <GroupedOptions options={placeDistricts} />
                   </select>
                 )}
               </Field>
@@ -612,30 +710,34 @@ export function ListingWizard({
                   </select>
                 )}
               </Field>
-              <Field name="metroStationId" label={lf("metro")}>
-                {(p) => (
-                  <select {...p} value={metro} onChange={(ev) => setMetro(ev.target.value)} className="field">
-                    <option value="">—</option>
-                    {options.metros.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-              <Field name="universityId" label={lf("university")}>
-                {(p) => (
-                  <select {...p} value={university} onChange={(ev) => setUniversity(ev.target.value)} className="field">
-                    <option value="">—</option>
-                    {options.universities.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
+              {cityMetros.length > 0 && (
+                <Field name="metroStationId" label={lf("metro")}>
+                  {(p) => (
+                    <select {...p} value={metro} onChange={(ev) => setMetro(ev.target.value)} className="field">
+                      <option value="">—</option>
+                      {cityMetros.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+              )}
+              {cityUniversities.length > 0 && (
+                <Field name="universityId" label={lf("university")}>
+                  {(p) => (
+                    <select {...p} value={university} onChange={(ev) => setUniversity(ev.target.value)} className="field">
+                      <option value="">—</option>
+                      {cityUniversities.map((u) => (
+                        <option key={u.value} value={u.value}>
+                          {u.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+              )}
               <Field name="addressPublic" label={lf("addressPublic")} hint={lf("addressPublicHint")}>
                 {(p) => <input {...p} defaultValue={values.addressPublic ?? ""} maxLength={160} className="field" />}
               </Field>
@@ -708,7 +810,7 @@ export function ListingWizard({
 
           {/* 4 — conditions */}
           <div {...panel("conditions")} className={grid}>
-            {num("deposit", t("depositAzn"), { min: 0, max: 50000, hint: t("depositHint") })}
+            {num("deposit", t("depositAzn", sym), { min: 0, max: 50000 * scale, hint: t("depositHint") })}
             {enumSel("utilities", t("utilitiesIncluded"), UTILITIES, "utilities")}
             <Field name="commissionType" label={lf("commissionType")} hint={isAgent ? t("commissionHintAgent") : undefined}>
               {(p) => (
@@ -721,16 +823,16 @@ export function ListingWizard({
                 </select>
               )}
             </Field>
-            {commission !== "NONE" ? num("commissionValue", lf("commissionValue"), { min: 0, max: commission === "PERCENT" ? 100 : 50000, required: true }) : <span className="hidden sm:block" />}
+            {commission !== "NONE" ? num("commissionValue", lf("commissionValue"), { min: 0, max: commission === "PERCENT" ? 100 : 50000 * scale, required: true }) : <span className="hidden sm:block" />}
             <fieldset className="grid gap-5 rounded-xl bg-mist p-4 sm:col-span-2 sm:grid-cols-2">
               <legend className="sr-only">{t("costsTitle")}</legend>
               <div className="sm:col-span-2">
                 <p className="font-semibold">{t("costsTitle")}</p>
                 <p className="hint mt-1">{t("costsLead")}</p>
               </div>
-              {num("utilitiesCost", t("utilitiesCost"), { min: 0, max: 5000, hint: t("utilitiesCostHint") })}
-              {num("internetCost", t("internetCost"), { min: 0, max: 1000 })}
-              {num("otherCosts", t("otherCosts"), { min: 0, max: 5000 })}
+              {num("utilitiesCost", t("utilitiesCost", sym), { min: 0, max: 5000 * scale, hint: t("utilitiesCostHint") })}
+              {num("internetCost", t("internetCost", sym), { min: 0, max: 1000 * scale })}
+              {num("otherCosts", t("otherCosts", sym), { min: 0, max: 5000 * scale })}
               <Field name="otherCostsNote" label={t("otherCostsNote")}>
                 {(p) => <input {...p} defaultValue={values.otherCostsNote ?? ""} maxLength={200} placeholder={t("otherCostsNotePlaceholder")} className="field" />}
               </Field>
@@ -849,7 +951,7 @@ export function ListingWizard({
                 {[label(snap.metroStationId ?? ""), label(snap.neighborhoodId ?? ""), label(snap.districtId ?? "")].filter(Boolean).join(", ") || "—"}
               </p>
               <p className="t-price mt-3 text-2xl">
-                {new Intl.NumberFormat(locale).format(Number(snap.monthlyRent || values.monthlyRent || 0))} ₼ <span className="text-base font-normal text-ink-2">{c("perMonth")}</span>
+                {formatMoney(Number(snap.monthlyRent || values.monthlyRent || 0), currency, locale as AppLocale)} <span className="text-base font-normal text-ink-2">{c("perMonth")}</span>
               </p>
               <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 {[

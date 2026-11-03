@@ -1,13 +1,13 @@
 /**
  * Seed — safe to re-run.
- *  1. Reference data (districts, neighborhoods, metro, universities, amenities,
- *     packages) is upserted by slug/key; admin edits to names are overwritten
+ *  1. Reference data (countries, cities, districts, neighborhoods, metro,
+ *     universities, amenities, packages) is upserted by slug/key; admin edits to names are overwritten
  *     only for rows that still exist in this file.
  *  2. Demo content (users @demo.yuva.test, listings/ads with is_demo = true) is
  *     deleted and recreated. Real (non-demo) rows are never touched.
  * Refuses to run with NODE_ENV=production unless SEED_ALLOW_PRODUCTION=1, and
  * skips demo content entirely when SEED_DEMO=0. With SEED_IF_EMPTY=1 each part
- * runs only while it is missing (reference: no districts yet; demo: no demo
+ * runs only while it is missing (reference: no amenities yet; demo: no demo
  * listings yet) — the Vercel build (npm run vercel-build) uses this, so later
  * deploys never overwrite admin edits or recreate demo rows under new ids.
  * Demo accounts get SEED_DEMO_PASSWORD if set; otherwise they cannot log in.
@@ -18,7 +18,7 @@ import path from "node:path";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type ListingCategory } from "../generated/prisma/client";
-import { AMENITIES, DISTRICTS, METRO, NEIGHBORHOODS, PACKAGES, UNIVERSITIES, namesOf } from "./reference-data";
+import { AMENITIES, CITIES, COUNTRIES, DISTRICTS, METRO, NEIGHBORHOODS, PACKAGES, UNIVERSITIES, namesOf } from "./reference-data";
 import { METRO_COORDS, NEIGHBORHOOD_COORDS, UNIVERSITY_COORDS, type LatLng } from "../lib/baku-geo";
 
 if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOW_PRODUCTION !== "1") {
@@ -30,12 +30,21 @@ const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.
 const DAY = 86_400_000;
 
 async function seedReference() {
+  for (const c of COUNTRIES) {
+    const data = { currency: c.currency, sortOrder: c.sort, latitude: c.at[0], longitude: c.at[1], ...namesOf(c.names) };
+    await db.country.upsert({ where: { code: c.code }, create: { code: c.code, ...data }, update: data });
+  }
+  const countries = new Map((await db.country.findMany()).map((c) => [c.code, c.id]));
+  for (const c of CITIES) {
+    const data = { countryId: countries.get(c.country)!, isPopular: true, sortOrder: c.sort, latitude: c.at[0], longitude: c.at[1], ...namesOf(c.names) };
+    await db.city.upsert({ where: { slug: c.slug }, create: { slug: c.slug, ...data }, update: data });
+  }
+  const cities = new Map((await db.city.findMany()).map((c) => [c.slug, c.id]));
+  // Metro stations are all in Baku, as are universities without a `city`.
+  const baku = cities.get("baku")!;
   for (const d of DISTRICTS) {
-    await db.district.upsert({
-      where: { slug: d.slug },
-      create: { slug: d.slug, sortOrder: d.sort, ...namesOf(d.names) },
-      update: { sortOrder: d.sort, ...namesOf(d.names) },
-    });
+    const data = { cityId: cities.get(d.city)!, sortOrder: d.sort, ...namesOf(d.names) };
+    await db.district.upsert({ where: { slug: d.slug }, create: { slug: d.slug, ...data }, update: data });
   }
   const districts = new Map((await db.district.findMany()).map((d) => [d.slug, d.id]));
   for (const n of NEIGHBORHOODS) {
@@ -45,14 +54,15 @@ async function seedReference() {
   for (const m of METRO) {
     await db.metroStation.upsert({
       where: { slug: m.slug },
-      create: { slug: m.slug, line: m.line, ...namesOf(m.names) },
-      update: { line: m.line, ...namesOf(m.names) },
+      create: { slug: m.slug, line: m.line, cityId: baku, ...namesOf(m.names) },
+      update: { line: m.line, cityId: baku, ...namesOf(m.names) },
     });
   }
   const metros = new Map((await db.metroStation.findMany()).map((m) => [m.slug, m.id]));
   for (const u of UNIVERSITIES) {
     const data = {
       shortName: u.short,
+      cityId: u.city ? cities.get(u.city)! : baku,
       districtId: u.district ? districts.get(u.district)! : null,
       nearestMetroId: u.metro ? metros.get(u.metro)! : null,
       ...namesOf(u.names),
@@ -66,6 +76,11 @@ async function seedReference() {
   await fill(METRO_COORDS, (slug, latitude, longitude) => db.metroStation.updateMany({ where: { slug, latitude: null }, data: { latitude, longitude } }));
   await fill(NEIGHBORHOOD_COORDS, (slug, latitude, longitude) => db.neighborhood.updateMany({ where: { slug, latitude: null }, data: { latitude, longitude } }));
   await fill(UNIVERSITY_COORDS, (slug, latitude, longitude) => db.university.updateMany({ where: { slug, latitude: null }, data: { latitude, longitude } }));
+  // Places outside Baku carry their position in reference-data (`at`).
+  const at = <T extends { slug: string; at?: [number, number] }>(rows: T[]) => Object.fromEntries(rows.flatMap((r) => (r.at ? [[r.slug, r.at]] : [])));
+  await fill(at(DISTRICTS), (slug, latitude, longitude) => db.district.updateMany({ where: { slug, latitude: null }, data: { latitude, longitude } }));
+  await fill(at(NEIGHBORHOODS), (slug, latitude, longitude) => db.neighborhood.updateMany({ where: { slug, latitude: null }, data: { latitude, longitude } }));
+  await fill(at(UNIVERSITIES), (slug, latitude, longitude) => db.university.updateMany({ where: { slug, latitude: null }, data: { latitude, longitude } }));
   for (const [i, a] of AMENITIES.entries()) {
     const data = { icon: a.icon, sortOrder: i, ...namesOf(a.names) };
     await db.amenity.upsert({ where: { key: a.key }, create: { key: a.key, ...data }, update: data });
@@ -74,7 +89,7 @@ async function seedReference() {
     const data = { ...namesOf(p.names), priceAzn: p.price, durationDays: p.days, listingLimit: p.limit, featuredSlots: p.slots, sortOrder: p.sort };
     await db.subscriptionPackage.upsert({ where: { code: p.code }, create: { code: p.code, ...data }, update: {} });
   }
-  console.log(`reference: ${DISTRICTS.length} districts, ${NEIGHBORHOODS.length} areas, ${METRO.length} stations, ${UNIVERSITIES.length} universities`);
+  console.log(`reference: ${COUNTRIES.length} countries, ${CITIES.length} cities, ${DISTRICTS.length} districts, ${NEIGHBORHOODS.length} areas, ${METRO.length} stations, ${UNIVERSITIES.length} universities`);
 }
 
 // ───────────── demo content ─────────────
@@ -421,6 +436,8 @@ async function seedDemo() {
   const metros = new Map((await db.metroStation.findMany()).map((d) => [d.slug, d.id]));
   const unis = new Map((await db.university.findMany()).map((d) => [d.slug, d.id]));
   const amenities = new Map((await db.amenity.findMany()).map((d) => [d.key, d.id]));
+  // All demo content is in Baku.
+  const baku = (await db.city.findUniqueOrThrow({ where: { slug: "baku" } })).id;
   const users = new Map<string, string>();
 
   for (const u of DEMO_USERS) {
@@ -564,6 +581,7 @@ async function seedDemo() {
       data: {
         ownerId: users.get(r.owner)!,
         isDemo: true,
+        cityId: baku,
         type: r.type,
         status: "PUBLISHED",
         title: r.title,
@@ -602,7 +620,9 @@ async function seedDemo() {
 
 async function main() {
   const onlyIfEmpty = process.env.SEED_IF_EMPTY === "1";
-  if (onlyIfEmpty && (await db.district.count()) > 0) console.log("reference data already present — skipping");
+  // Amenities come only from this seed (migrations insert countries, cities and
+  // some districts), so they mark whether reference data was ever seeded.
+  if (onlyIfEmpty && (await db.amenity.count()) > 0) console.log("reference data already present — skipping");
   else await seedReference();
   if (process.env.SEED_DEMO === "0") return;
   if (onlyIfEmpty && (await db.listing.count({ where: { isDemo: true } })) > 0) {

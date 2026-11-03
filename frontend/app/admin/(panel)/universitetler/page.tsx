@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/server/auth/current";
+import { adminPlaceOptions } from "@/server/admin";
 import { db } from "@/server/db";
 import { AdminPage, Panel } from "@/components/admin/ui";
 import { ReferenceForm } from "@/components/admin/reference-form";
@@ -9,14 +10,15 @@ export const metadata = { title: "Universitetlər" };
 
 export default async function AdminUniversities() {
   await requireAdmin();
-  const [unis, districts, metros] = await Promise.all([
+  const [unis, places, metros] = await Promise.all([
     db.university.findMany({ orderBy: { shortName: "asc" }, include: { _count: { select: { listings: true } }, nearestMetro: { select: { nameAz: true } } } }),
-    db.district.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameAz: true } }),
+    adminPlaceOptions(),
     db.metroStation.findMany({ orderBy: { nameAz: "asc" }, select: { id: true, nameAz: true } }),
   ]);
   const fields = [
     { name: "shortName", label: "Qısa ad", type: "text" as const, required: true },
-    { name: "districtId", label: "Rayon", type: "select" as const, options: districts.map((d) => ({ value: d.id, label: d.nameAz })) },
+    { name: "cityId", label: "Şəhər", type: "select" as const, required: true, options: places.cities },
+    { name: "districtId", label: "Rayon", type: "select" as const, options: places.districts },
     { name: "nearestMetroId", label: "Yaxın metro", type: "select" as const, options: metros.map((m) => ({ value: m.id, label: m.nameAz })) },
     { name: "latitude", label: "En dairəsi", type: "number" as const },
     { name: "longitude", label: "Uzunluq", type: "number" as const },

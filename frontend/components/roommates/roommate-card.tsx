@@ -3,18 +3,25 @@ import { MapPin } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import type { RoommateCardData } from "@/server/roommates/queries";
-import { formatAzn, formatShortDate } from "@/lib/format";
+import { formatShortDate } from "@/lib/format";
+import { displayPrice, displayRangeText } from "@/lib/money";
+import { getMoneyView } from "@/server/money";
 import { MetroDot } from "@/components/listings/category-tag";
 
 /** Roommate ad in the same card language as listings (no photo: people, not rooms). */
 export async function RoommateCard({ ad, locale }: { ad: RoommateCardData; locale: AppLocale }) {
-  const [t, r, c, cat] = await Promise.all([
+  const [t, r, c, cat, cur, money] = await Promise.all([
     getTranslations({ locale, namespace: "enums" }),
     getTranslations({ locale, namespace: "roommates" }),
     getTranslations({ locale, namespace: "common" }),
     getTranslations({ locale, namespace: "categories" }),
+    getTranslations({ locale, namespace: "currency" }),
+    getMoneyView(),
   ]);
   const hasPlace = ad.type === "HAS_PLACE";
+  // Amounts are in the ad's own currency; shown converted (and marked) when the visitor views another.
+  const share = hasPlace && ad.monthlyContribution != null ? displayPrice(ad.monthlyContribution, ad.currency, money, locale) : null;
+  const range = !hasPlace && ad.budgetMin != null && ad.budgetMax != null ? displayRangeText(ad.budgetMin, ad.budgetMax, ad.currency, money, locale) : null;
   const initial = ad.firstName.charAt(0).toLocaleUpperCase(locale);
   const facts = [
     ad.homeType ? { label: hasPlace ? r("homeType") : r("desiredHome"), value: cat(ad.homeType) } : null,
@@ -67,15 +74,15 @@ export async function RoommateCard({ ad, locale }: { ad: RoommateCardData; local
         <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
           <span className="flex min-w-0 items-center gap-1.5 text-sm text-ink-2">
             {ad.metro ? <MetroDot line={ad.metro.line} /> : <MapPin className="size-4 shrink-0" aria-hidden />}
-            <span className="truncate">{[ad.metro ? `${ad.metro.name} m.` : null, ad.area].filter(Boolean).join(", ")}</span>
+            <span className="truncate">{[ad.metro ? `${ad.metro.name} m.` : null, ad.area, ad.city].filter(Boolean).join(", ")}</span>
           </span>
-          <span className="t-price shrink-0 text-lg">
-            {hasPlace && ad.monthlyContribution != null
-              ? formatAzn(ad.monthlyContribution, locale)
-              : ad.budgetMin != null && ad.budgetMax != null
-                ? `${ad.budgetMin}–${formatAzn(ad.budgetMax, locale)}`
-                : null}
-            <span className="text-sm font-normal text-ink-2">{c("perMonth")}</span>
+          <span className="shrink-0 text-right">
+            <span className="t-price block text-lg">
+              {share?.approximate && <span aria-label={cur("approx")}>≈ </span>}
+              {share ? share.main : range}
+              <span className="text-sm font-normal text-ink-2">{c("perMonth")}</span>
+            </span>
+            {share?.approximate && <span className="block text-xs text-ink-2">{cur("original", { price: share.original })}</span>}
           </span>
         </div>
       </div>

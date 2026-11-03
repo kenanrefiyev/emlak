@@ -7,16 +7,21 @@ import NextLink from "next/link";
 import { Link, usePathname } from "@/i18n/navigation";
 import { NavLinks } from "./nav-links";
 import { LanguageSwitcher } from "./language-switcher";
+import { CountrySwitcher, type CountryChoice } from "./country-switcher";
+import { CurrencySwitcher, type CurrencyInfo } from "./currency-switcher";
 import { Logo } from "./logo";
 
 interface Props {
   links: { href: string; label: string }[];
+  countries: CountryChoice[];
+  country: string;
+  currency: CurrencyInfo;
   user: { name: string; accountHref: string; isAdmin: boolean } | null;
   logout: () => Promise<void>;
 }
 
 /** Off-canvas menu (Homelengo mobile pattern) shown below the xl breakpoint. */
-export function MobileNav({ links, user, logout }: Props) {
+export function MobileNav({ links, countries, country, currency, user, logout }: Props) {
   const t = useTranslations("nav");
   const meta = useTranslations("meta");
   const [open, setOpen] = useState(false);
@@ -92,6 +97,20 @@ export function MobileNav({ links, user, logout }: Props) {
                 </div>
               )}
             </div>
+            {countries.length > 1 && (
+              <div className="mt-6">
+                <p className="mb-2 text-sm font-semibold text-ink-2">{t("country")}</p>
+                <Suspense>
+                  <CountrySwitcher countries={countries} current={country} variant="list" />
+                </Suspense>
+              </div>
+            )}
+            {currency.currencies.length > 1 && (
+              <div className="mt-6">
+                <p className="mb-2 text-sm font-semibold text-ink-2">{t("currency")}</p>
+                <CurrencySwitcher info={currency} variant="list" />
+              </div>
+            )}
             <div className="mt-6">
               <p className="mb-2 text-sm font-semibold text-ink-2">{t("language")}</p>
               <Suspense>

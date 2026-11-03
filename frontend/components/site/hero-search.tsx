@@ -1,16 +1,22 @@
 "use client";
 
+import { toPublicPath } from "@/i18n/paths";
 import { useId, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { SEGMENTS } from "@/lib/domain";
+import { GroupedOptions } from "@/components/forms/grouped-options";
+import { amountScale, currencySymbol } from "@/lib/money";
+import { numberTags, type AppLocale } from "@/i18n/routing";
 
 type Tab = "rent" | "roommate" | "family";
 interface Opt {
   value: string;
   label: string;
+  group?: string;
 }
+type CityOpt = Opt & { cityValue: string };
 
 /**
  * Hero search in the Homelengo arrangement: tab pills above a wide white pill
@@ -18,7 +24,17 @@ interface Opt {
  * primary search pill. Each tab is a plain GET form (works before hydration);
  * with JS, empty fields are dropped from the URL.
  */
-export function HeroSearch({ districts, universities }: { districts: Opt[]; universities: Opt[] }) {
+export function HeroSearch({
+  cities,
+  districts,
+  universities,
+  currency,
+}: {
+  cities: Opt[];
+  districts: CityOpt[];
+  universities: CityOpt[];
+  currency: string;
+}) {
   const t = useTranslations("home");
   const cat = useTranslations("categories");
   const c = useTranslations("common");
@@ -27,6 +43,9 @@ export function HeroSearch({ districts, universities }: { districts: Opt[]; univ
   const locale = useLocale();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("rent");
+  // A chosen city narrows the district and university lists (the market already narrowed them to one country).
+  const [city, setCity] = useState("");
+  const inCity = (list: CityOpt[]) => (city ? list.filter((o) => o.cityValue === city) : list);
   const id = useId();
   const path = tab === "rent" ? "/students" : tab === "roommate" ? "/roommates" : "/family";
 
@@ -39,21 +58,18 @@ export function HeroSearch({ districts, universities }: { districts: Opt[]; univ
 
   const segment = (name: string, label: string, control: React.ReactNode, extra = "") => (
     <div className={`min-w-0 flex-1 px-5 py-3 lg:py-0 ${extra}`}>
-      <label htmlFor={`${id}-${name}`} className="block text-sm text-ink-3">
+      {/* One line, so the fields stay aligned when a label is long; the full text is in the tooltip. */}
+      <label htmlFor={`${id}-${name}`} title={label} className="block truncate text-sm text-ink-3">
         {label}
       </label>
       {control}
     </div>
   );
-  const select = (name: string, opts: Opt[], anyLabel = c("any")) => (
+  const select = (name: string, opts: Opt[], anyLabel = c("any"), onChange?: (value: string) => void) => (
     <div className="relative mt-0.5">
-      <select id={`${id}-${name}`} name={name} defaultValue="" className="w-full cursor-pointer appearance-none truncate bg-transparent pr-7 text-[0.9375rem] font-medium text-ink focus:outline-none">
+      <select id={`${id}-${name}`} name={name} defaultValue="" onChange={onChange && ((ev) => onChange(ev.target.value))} className="w-full cursor-pointer appearance-none truncate bg-transparent pr-7 text-[0.9375rem] font-medium text-ink focus:outline-none">
         <option value="">{anyLabel}</option>
-        {opts.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
+        <GroupedOptions options={opts} />
       </select>
       <ChevronDown className="pointer-events-none absolute top-1/2 right-0 size-4 -translate-y-1/2" aria-hidden />
     </div>
@@ -90,7 +106,7 @@ export function HeroSearch({ districts, universities }: { districts: Opt[]; univ
         role="tabpanel"
         aria-labelledby={`${id}-tab-${tab}`}
         method="get"
-        action={`/${locale}${path}`}
+        action={`/${locale}${toPublicPath(path, locale as AppLocale)}`}
         onSubmit={onSubmit}
         className="mt-5 flex flex-col overflow-hidden rounded-2xl bg-paper text-left lg:flex-row lg:items-center lg:rounded-full lg:py-5 lg:pr-5 lg:pl-5"
       >
@@ -104,21 +120,26 @@ export function HeroSearch({ districts, universities }: { districts: Opt[]; univ
               select("type", (["HAS_PLACE", "SEEKING_PARTNER"] as const).map((k) => ({ value: k.toLowerCase(), label: e(`roommateTypeShort.${k}`) })), c("all")),
             )}
           {tab === "family" && segment("rooms", t("searchRooms"), select("rooms", [1, 2, 3, 4].map((n) => ({ value: String(n), label: n === 4 ? s("rooms4") : String(n) }))))}
-          {segment("district", t("searchArea"), select("district", districts))}
-          {tab !== "family" && segment("uni", t("searchUni"), select("uni", universities))}
+          {cities.length > 1 && segment("city", t("searchCity"), select("city", cities, c("any"), setCity))}
+          {segment("district", t("searchArea"), select("district", inCity(districts)))}
+          {tab !== "family" && segment("uni", t("searchUni"), select("uni", inCity(universities)))}
           {segment(
             "budget",
-            t("searchBudget"),
-            <input
-              id={`${id}-budget`}
-              name={tab === "roommate" ? "budget" : "max"}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={20000}
-              placeholder={t("searchBudgetPlaceholder")}
-              className="mt-0.5 w-full bg-transparent text-[0.9375rem] font-medium text-ink placeholder:font-normal placeholder:text-ink-3 focus:outline-none"
-            />,
+            t("searchBudget", { currency: currencySymbol(currency) }),
+            <>
+              {/* The budget is in the visitor's display currency; results convert it per listing. */}
+              <input type="hidden" name="cur" value={currency} />
+              <input
+                id={`${id}-budget`}
+                name={tab === "roommate" ? "budget" : "max"}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={20000 * amountScale(currency)}
+                placeholder={t("searchBudgetPlaceholder", { amount: new Intl.NumberFormat(numberTags[locale as AppLocale]).format(300 * amountScale(currency)) })}
+                className="mt-0.5 w-full bg-transparent text-[0.9375rem] font-medium text-ink placeholder:font-normal placeholder:text-ink-3 focus:outline-none"
+              />
+            </>,
           )}
         </div>
         <div className="flex gap-2.5 border-t border-line p-4 lg:border-0 lg:p-0 lg:pl-4">

@@ -1,16 +1,16 @@
 {
   "meta": {
     "siteName": "Yuva",
-    "tagline": "Bakü'de öğrenci evi ve ev arkadaşı",
-    "homeTitle": "Yuva — Bakü'de öğrenci evleri ve ev arkadaşı",
-    "homeDescription": "Bakü'ye okumaya gelen öğrenciler için oda, paylaşımlı ev ve ev arkadaşı ilanları. Aileler için uzun dönem kiralık daireler.",
-    "studentsTitle": "Bakü'de öğrenci evleri ve odalar",
-    "studentsDescription": "Bakü'de öğrenciler için ayrı oda, paylaşımlı ev, yurt ve daire ilanları: semt, metro, üniversite ve fiyata göre arama.",
-    "familyTitle": "Bakü'de aileler için kiralık evler",
-    "familyDescription": "Bakü'de aileler için uzun dönem kiralık daireler: semt, oda sayısı ve fiyata göre arama.",
-    "roommatesTitle": "Bakü'de ev arkadaşı bul",
+    "tagline": "Azerbaycan ve Türkiye'de öğrenci evleri ve ev arkadaşları",
+    "homeTitle": "YUVA — Evini bul. İnsanlarını bul.",
+    "homeDescription": "Azerbaycan ve Türkiye'de öğrencilere uygun odalar, paylaşımlı daireler ve ev arkadaşları — Bakü, İstanbul, Ankara, İzmir ve daha fazlası; fiyatlar AZN veya TRY ile.",
+    "studentsTitle": "Azerbaycan ve Türkiye'de öğrenci odaları ve daireleri",
+    "studentsDescription": "Öğrenciler için özel odalar, paylaşımlı daireler, yurtlar ve daireler — şehir, mahalle, üniversite ve bütçeye göre ara.",
+    "familyTitle": "Aileler için uzun dönem kiralık evler",
+    "familyDescription": "Azerbaycan ve Türkiye'de aileler için uzun dönem kiralık daireler — şehir, ilçe, oda sayısı ve fiyata göre ara.",
+    "roommatesTitle": "Ev arkadaşı bul — Azerbaycan ve Türkiye",
     "roommatesDescription": "Odası olan ve birlikte ev tutmak isteyen öğrencilerin ilanları. Bütçe, bölge ve taşınma tarihine göre uyum.",
-    "areasTitle": "Bakü'nün semtleri, metro istasyonları ve üniversiteleri",
+    "areasTitle": "Şehirler, ilçeler ve üniversiteler",
     "areasDescription": "Kiralık ilanlara semt, mahalle, metro istasyonu ve üniversiteye göre göz atın.",
     "listingFallbackDescription": "{category} — {area}, aylık {price}.",
     "demoNotice": "Demo ilan",
@@ -37,7 +37,9 @@
     "skipToContent": "İçeriğe geç",
     "mainNav": "Ana menü",
     "notifications": "Bildirimler",
-    "notificationsCount": "{count, plural, one {Bildirimler: # yeni} other {Bildirimler: # yeni}}"
+    "notificationsCount": "{count, plural, one {Bildirimler: # yeni} other {Bildirimler: # yeni}}",
+    "country": "Ülke",
+    "currency": "Para birimi"
   },
   "common": {
     "search": "Ara",
@@ -151,7 +153,7 @@
     "commission": {
       "NONE": "Komisyon yok",
       "PERCENT": "Yüzde (%)",
-      "FIXED": "Sabit tutar (₼)"
+      "FIXED": "Sabit tutar"
     },
     "smoking": {
       "NO_SMOKING": "Evde sigara yok",
@@ -250,8 +252,8 @@
     }
   },
   "home": {
-    "title": "Bakü'de odanı ve ev arkadaşını bul",
-    "lead": "Okumak için Bakü'ye gelen öğrencilere oda, paylaşımlı ev ve birlikte kiralama ilanları — üniversite ve metroya göre arama.",
+    "title": "Dünyadaki yerini bul.",
+    "lead": "Öğrencilere uygun evleri keşfet, paylaşımlı yaşam alanlarına göz at ve birlikte yaşamayı seveceğin insanları bul.",
     "tabs": {
       "rent": "Oda ve ev",
       "roommate": "Ev arkadaşı",
@@ -260,30 +262,24 @@
     "searchType": "Ne arıyorsun?",
     "searchArea": "Semt",
     "searchUni": "Üniversite",
-    "searchBudget": "Aylık bütçe (₼)",
-    "searchBudgetPlaceholder": "örn. 300",
+    "searchBudget": "Aylık bütçe ({currency})",
+    "searchBudgetPlaceholder": "örn. {amount}",
     "searchRooms": "Oda sayısı",
     "heroPhotoAlt": "Deniz manzaralı aydınlık dairede yemek alanı",
-    "areasTitle": "Öğrencilerin en çok aradığı semtler",
-    "recentTitle": "Yeni öğrenci ilanları",
-    "affordableTitle": "Uygun fiyatlı odalar",
-    "affordableLead": "Ayda {price} veya daha az — kişi başı.",
-    "roommatesTitle": "Ev arkadaşı arayanlar",
+    "recentTitle": "Öne çıkan öğrenci evleri",
+    "roommatesTitle": "Ev arkadaşı bul",
     "roommatesLead": "Odası olanlar ve birlikte ev tutmak isteyenler.",
     "unisTitle": "Üniversitene yakın ev ara",
     "unisLead": "Üniversitenin bulunduğu semt ve en yakın metro istasyonuna göre ilanlar. Mesafeyi haritada kendin kontrol et.",
     "uniListings": "{count, plural, =0 {ilan yok} one {# ilan} other {# ilan}}",
-    "familyTitle": "Uzun dönem kiralık daireler",
-    "howTitle": "Bakü'de ev bulmanın üç yolu",
+    "howTitle": "YUVA nasıl çalışır",
     "safetyTitle": "İlanları nasıl kontrol ediyoruz",
     "safetyLink": "Güvenlik önerileri",
     "ctaStudentButton": "Ev arkadaşı ilanı ver",
     "emptySection": "Bu bölümde henüz ilan yok.",
-    "recentSubtitle": "Öğrenci ilanları",
+    "recentSubtitle": "Öğrenci evleri",
     "allCategories": "Tümü",
     "viewAll": "Tüm ilanları gör",
-    "areasSubtitle": "Bölgeler",
-    "areaListings": "{count, plural, =0 {Henüz ilan yok} one {# ilan} other {# ilan}}",
     "howSubtitle": "Nasıl çalışır",
     "howBoxes": {
       "room": {
@@ -318,14 +314,28 @@
         "body": "İletişim bir taleple başlar. Telefon ve e-posta yalnızca talep kabul edildikten sonra karşı tarafa görünür."
       }
     },
-    "affordableSubtitle": "Uygun fiyatlı",
     "roommatesSubtitle": "Ev arkadaşı",
     "roommatesButton": "Tüm ev arkadaşı ilanları",
     "unisSubtitle": "Üniversiteler",
-    "familySubtitle": "Aileler için",
     "agentCtaTitle": "Emlakçı ya da ev sahibi misiniz?",
     "agentCtaBody": "Öğrencilere ve ailelere gerçek, güncel ilanlar sunun. Emlakçılar için istatistik ve öne çıkan ilan imkânı var.",
-    "agentCtaButton": "Kiralık ilan ver"
+    "agentCtaButton": "Kiralık ilan ver",
+    "searchCity": "Şehir",
+    "brandLine": "YUVA — Evini bul. İnsanlarını bul.",
+    "countriesSubtitle": "Ülkeler",
+    "countriesTitle": "Ülkeni seç",
+    "countriesLead": "İlanlar, şehirler ve fiyatlar seçtiğin ülkeye göre gösterilir. İstediğin zaman değiştirebilirsin — dil aynı kalır.",
+    "countrySelected": "Seçili",
+    "countryStats": "{cities} şehir · {listings} ilan · {roommates} ev arkadaşı ilanı",
+    "countryBrowse": "{country} ilanlarına göz at",
+    "countrySwitch": "Ülkeyi değiştir: {country}",
+    "citiesSubtitle": "Şehirler",
+    "citiesTitle": "{country}: popüler şehirler",
+    "cityStats": "{listings, plural, =0 {Henüz öğrenci ilanı yok} other {# öğrenci ilanı}} · {roommates, plural, =0 {ev arkadaşı ilanı yok} other {# ev arkadaşı ilanı}}",
+    "sharedSubtitle": "Paylaşımlı yaşam",
+    "sharedTitle": "Paylaşımlı daireler",
+    "sharedLead": "Diğer öğrencilerle paylaşılan bir dairede yer kirala — kampüse yakın yaşamanın genellikle en uygun yolu.",
+    "sharedButton": "Tüm paylaşımlı daireler"
   },
   "search": {
     "title": "Arama",
@@ -344,7 +354,7 @@
     "neighborhood": "Mahalle",
     "metro": "Metro",
     "university": "Üniversite",
-    "price": "Aylık fiyat (₼)",
+    "price": "Aylık fiyat ({currency})",
     "priceMin": "En az",
     "priceMax": "En çok",
     "rooms": "Oda sayısı",
@@ -376,9 +386,9 @@
     "results": "{count, plural, =0 {İlan bulunamadı} one {# ilan bulundu} other {# ilan bulundu}}",
     "activeFilters": "Aktif filtreler",
     "removeFilter": "{label} filtresini kaldır",
-    "chipPrice": "{min} – {max} ₼",
-    "chipPriceMin": "{min} ₼'den",
-    "chipPriceMax": "{max} ₼'ye kadar",
+    "chipPrice": "{min} – {max}",
+    "chipPriceMin": "{min}'den",
+    "chipPriceMax": "{max}'ye kadar",
     "chipRooms": "{count} oda",
     "chipSpaces": "{count}+ boş yer",
     "chipMoveIn": "{date} tarihine kadar",
@@ -401,7 +411,9 @@
     "viewMap": "Harita",
     "mapOpen": "İlana bak",
     "mapNote": "Haritada adres değil, yaklaşık bölge gösterilir (metro istasyonu, mahalle veya ilçe merkezi).",
-    "mapCapped": "Haritada ilk {count} ilan gösteriliyor — daha net sonuç için filtreleri daraltın."
+    "mapCapped": "Haritada ilk {count} ilan gösteriliyor — daha net sonuç için filtreleri daraltın.",
+    "country": "Ülke",
+    "city": "Şehir"
   },
   "card": {
     "save": "Kaydet",
@@ -432,7 +444,7 @@
     "noDeposit": "Depozito yok",
     "commission": "Emlakçı ücreti",
     "commissionPercent": "Kiranın %{value}'i",
-    "commissionFixed": "{value} ₼",
+    "commissionFixed": "{value}",
     "paymentTerms": "Ödeme koşulları",
     "overview": "Genel bakış",
     "description": "Açıklama",
@@ -505,7 +517,7 @@
     "lead": "Odası olan öğrenciler ve birlikte ev tutmak isteyenler. Uyum yüzdesi bütçe, bölge, tarih ve ev alışkanlıklarına göre hesaplanır.",
     "create": "Ev arkadaşı ilanı ver",
     "filterType": "İlan türü",
-    "filterBudget": "Bütçem (₼/ay)",
+    "filterBudget": "Bütçem ({currency}/ay)",
     "filterMoveIn": "Taşınma tarihi (±30 gün)",
     "filterSmoking": "Sigara",
     "results": "{count, plural, =0 {İlan bulunamadı} one {# ilan} other {# ilan}}",
@@ -513,7 +525,7 @@
     "emptyBody": "Filtreleri değiştirin ya da kendi ilanınızı verin — başkaları sizi bulsun.",
     "contribution": "Aylık pay",
     "budget": "Bütçe",
-    "budgetRange": "{min}–{max} ₼",
+    "budgetRange": "{min}–{max}",
     "moveIn": "Taşınma",
     "duration": "Süre",
     "homeType": "Ev türü",
@@ -574,7 +586,8 @@
     "profileHiddenNote": "Profil bilgileriniz (üniversite, sınıf, şehir, hakkımda) bu ilanda başkalarına gösterilmiyor.",
     "saveProfile": "Profili kaydet",
     "unsaveProfile": "Kaydedildi",
-    "saveFailed": "Kaydedilemedi — tekrar deneyin."
+    "saveFailed": "Kaydedilemedi — tekrar deneyin.",
+    "city": "Şehir"
   },
   "roommateForm": {
     "titleNew": "Ev arkadaşı ilanı",
@@ -591,7 +604,7 @@
     "description": "Kendiniz ve ev hakkında",
     "descriptionHint": "Üniversite, sınıf, günlük düzen, beklentileriniz. Telefon ve adres yazmayın.",
     "language": "İlanın dili",
-    "contribution": "Ev arkadaşının aylık payı (₼)",
+    "contribution": "Ev arkadaşının aylık payı ({currency})",
     "homeType": "Ev türü",
     "currentResidents": "Şu an kaç kişi yaşıyor",
     "availableSpaces": "Kaç boş yer var",
@@ -600,8 +613,8 @@
     "metro": "Yakın metro",
     "houseRules": "Ev kuralları",
     "houseRulesHint": "Sigara, misafir, sessizlik saatleri, temizlik sırası…",
-    "budgetMin": "Bütçe — en az (₼, kişi başı)",
-    "budgetMax": "Bütçe — en çok (₼, kişi başı)",
+    "budgetMin": "Bütçe — en az ({currency}, kişi başı)",
+    "budgetMax": "Bütçe — en çok ({currency}, kişi başı)",
     "desiredHome": "İstediğiniz ev türü",
     "groupSize": "Kaç kişi kiralayacaksınız",
     "groupSizeHint": "Siz dahil",
@@ -622,7 +635,12 @@
     "lifestyleOptional": "Bu sorular isteğe bağlıdır. Cevaplamadığınız sorular uyum hesabında dikkate alınmaz.",
     "sectionPrivacy": "Gizlilik",
     "showProfile": "Profil bilgilerimi ilanda göster",
-    "showProfileHint": "Üniversite, sınıf, geldiğiniz şehir ve \"hakkımda\" metni. Telefon numarası ilanda asla gösterilmez."
+    "showProfileHint": "Üniversite, sınıf, geldiğiniz şehir ve \"hakkımda\" metni. Telefon numarası ilanda asla gösterilmez.",
+    "sectionLocation": "Nerede?",
+    "country": "Ülke",
+    "city": "Şehir",
+    "cityHint": "İlan bu şehrin aramalarında görünür. Tutarlar ülkenin para birimindedir.",
+    "chooseCityFirst": "Önce şehri seçin"
   },
   "listingForm": {
     "titleNew": "Kiralık ilan ver",
@@ -644,10 +662,10 @@
     "description": "Açıklama",
     "descriptionHint": "En az 40 karakter. Evde kim yaşıyor, neler dahil, kurallar. Telefon yazmayın — talep sistemi var.",
     "language": "İlanın yazıldığı dil",
-    "monthlyRent": "Aylık kira (₼)",
+    "monthlyRent": "Aylık kira ({currency})",
     "pricePerPlace": "Fiyat kişi başı",
     "pricePerPlaceHint": "İşaretlenmezse fiyat tüm daire için sayılır.",
-    "deposit": "Depozito (₼)",
+    "deposit": "Depozito ({currency})",
     "commissionType": "Emlakçı ücreti",
     "commissionValue": "Emlakçı ücreti tutarı",
     "paymentTerms": "Ödeme koşulları",
@@ -705,7 +723,9 @@
     "submitted": "İlan incelemeye gönderildi.",
     "needsPhoto": "Göndermek için en az bir fotoğraf ekleyin.",
     "rejectedReason": "Moderatör notu: {reason}",
-    "preview": "Önizleme"
+    "preview": "Önizleme",
+    "country": "Ülke",
+    "city": "Şehir"
   },
   "auth": {
     "loginTitle": "Giriş yap",
@@ -912,7 +932,7 @@
   },
   "areas": {
     "heading": "Bölgeler",
-    "lead": "Bakü'nün semt, mahalle, metro istasyonu ve üniversitelerine göre aktif ilanlar.",
+    "lead": "{country}: şehir, ilçe, mahalle, metro istasyonu ve üniversiteye göre aktif ilanlar.",
     "districts": "Semtler ve mahalleler",
     "metro": "Metro hatları",
     "universities": "Üniversiteler",
@@ -975,7 +995,7 @@
     "a7": "Hesabım → Güvenlik bölümündeki \"Hesabı sil\" düğmesiyle. İlanlarınız ve fotoğraflarınız da silinir."
   },
   "footer": {
-    "about": "Bakü'ye okumaya gelen öğrenciler için kiralık ev ve ev arkadaşı platformu. Aileler için uzun dönem kiralık evler de burada.",
+    "about": "YUVA — evini bul, insanlarını bul. Azerbaycan ve Türkiye'de öğrenci evleri ve ev arkadaşları; aileler için uzun dönem kiralık evler de var.",
     "explore": "Keşfet",
     "help": "Yardım",
     "legal": "Yasal",
@@ -1146,7 +1166,7 @@
         "h": "İlan kuralları",
         "p": [
           "İlan gerçek, güncel ve kiralama hakkınız olan bir mülkle ilgili olmalıdır.",
-          "Fiyat AZN cinsinden, ödemeler ve komisyon açıkça belirtilmelidir.",
+          "Fiyat, ilanın bulunduğu ülkenin para biriminde (AZN veya TRY), ödemeler ve komisyon açıkça belirtilmelidir.",
           "Etnik köken, din veya engellilik temelinde ayrımcılık yapan ilanlar yasaktır. Paylaşımlı evlerde kız/erkek tercihi belirtilebilir.",
           "Kiralanan daireyi \"Kiralandı\" olarak işaretleyin."
         ]
@@ -1383,7 +1403,7 @@
         "APARTMENT": "Daire",
         "HOUSE": "Müstakil ev"
       },
-      "monthlyRentAzn": "Aylık kira (AZN)",
+      "monthlyRentAzn": "Aylık kira ({currency})",
       "mapTitle": "Yaklaşık konum",
       "mapThis": "Bu ilan",
       "mapApprox": "yaklaşık bölge",
@@ -1394,7 +1414,7 @@
       "maxOccupancy": "Boş yer (en fazla)",
       "maxOccupancyHint": "Kaç kişilik yer var.",
       "tenantPreference": "Kime uygun",
-      "depositAzn": "Depozito (AZN)",
+      "depositAzn": "Depozito ({currency})",
       "utilitiesIncluded": "Faturalar",
       "commissionHintAgent": "Komisyon ilanda açıkça gösterilir.",
       "moveIn": "Taşınma tarihi",
@@ -1428,14 +1448,16 @@
       "depositHint": "Boş bırakırsanız \"bilinmiyor\" gösterilir. Depozito yoksa 0 yazın.",
       "costsTitle": "Aylık ek giderler",
       "costsLead": "Öğrenciler toplam maliyeti görsün diye doldurun. Boş bırakılan alan ilanda \"Bilinmiyor\" olarak gösterilir; gider yoksa 0 yazın.",
-      "utilitiesCost": "Faturalar (tahmini, ₼/ay)",
+      "utilitiesCost": "Faturalar (tahmini, {currency}/ay)",
       "utilitiesCostHint": "Tüm ev için. Faturalar kiraya dahilse boş bırakın.",
-      "internetCost": "İnternet (₼/ay)",
-      "otherCosts": "Diğer aylık giderler (₼)",
+      "internetCost": "İnternet ({currency}/ay)",
+      "otherCosts": "Diğer aylık giderler ({currency})",
       "otherCostsNote": "Diğer giderler nedir?",
       "otherCostsNotePlaceholder": "örn. aidat, asansör",
       "costSharers": "Giderler kaç kişiye bölünüyor?",
-      "costSharersHint": "Kişi başı payı hesaplamak için. Bilinmiyorsa boş bırakın."
+      "costSharersHint": "Kişi başı payı hesaplamak için. Bilinmiyorsa boş bırakın.",
+      "currency": "Para birimi",
+      "currencyHint": "İlanın ülkesinin para birimi otomatik seçilir. Tüm tutarlar bu para biriminde saklanır."
     },
     "inquiries": {
       "leadLandlord": "İlanlarınıza gelen talepler. Aşamayı ve notları yalnızca siz görürsünüz.",
@@ -1635,5 +1657,30 @@
     "inquiryAccepted": "{name} talebinizi kabul etti: {title}",
     "inquiryDeclined": "{name} talebinizi reddetti: {title}",
     "channelNote": "Bildirimler yalnızca sitede gösterilir. Yeni talepler için ayrıca e-posta gönderilir."
+  },
+  "currency": {
+    "label": "Para birimi",
+    "names": {
+      "AZN": "Azerbaycan manatı",
+      "TRY": "Türk lirası"
+    },
+    "rateLine": "1 {from} ≈ {value} {to}",
+    "updated": "Kur güncellendi: {date}",
+    "source": "Kaynak",
+    "disclaimer": "Çevrilmiş fiyatlar yaklaşıktır ve yalnızca bilgi amaçlıdır.",
+    "unavailable": "Döviz kurları şu anda alınamıyor — fiyatlar ilanın kendi para biriminde gösteriliyor.",
+    "approx": "Yaklaşık çevrilmiş fiyat",
+    "original": "İlan fiyatı: {price}",
+    "detailNote": "Yaklaşık çevrilmiş fiyat — {date} kuruyla, yalnızca bilgi amaçlı. Ödeme, ev sahibiyle anlaşılan para biriminde yapılır.",
+    "breakdownNote": "Tutarlar ilanın para birimindedir ({currency}).",
+    "field": "Para birimi",
+    "fieldHint": "İlanın ülkesinin para birimi otomatik seçilir. Tüm tutarlar bu para biriminde saklanır."
+  },
+  "cityPage": {
+    "title": "{city} öğrenci evleri — {country}",
+    "description": "{city} şehrinde öğrenciler için odalar, paylaşımlı daireler ve ev arkadaşları — fiyatları karşılaştır, üniversitene yakın bir ev bul.",
+    "heading": "{city} öğrenci evleri",
+    "lead": "{city}, {country}: {listings, plural, =0 {henüz öğrenci ilanı yok} other {# öğrenci ilanı}}, {roommates, plural, =0 {ev arkadaşı ilanı yok} other {# ev arkadaşı ilanı}}.",
+    "roommatesLink": "{city} ev arkadaşı ilanları"
   }
 }

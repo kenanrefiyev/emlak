@@ -6,7 +6,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 export function NavLinks({ links, vertical = false, onNavigate }: { links: { href: string; label: string }[]; vertical?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <ul className={vertical ? "flex flex-col" : "flex items-center gap-9"}>
+    <ul className={vertical ? "flex flex-col" : "flex items-center gap-6"}>
       {links.map((l) => {
         const active = l.href === "/" ? pathname === "/" : pathname === l.href || pathname.startsWith(`${l.href}/`);
         return (

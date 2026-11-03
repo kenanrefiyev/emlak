@@ -7,7 +7,13 @@ import "../globals.css";
 export const metadata: Metadata = {
   title: { default: "İdarəetmə paneli · Yuva", template: "%s · Yuva admin" },
   robots: { index: false, follow: false },
-  icons: { icon: "/icon.svg" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
 };
 
 /**

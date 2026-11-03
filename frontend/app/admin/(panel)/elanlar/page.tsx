@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Prisma } from "@/generated/prisma/client";
+import { formatMoney } from "@/lib/money";
 import { requireAdmin } from "@/server/auth/current";
 import { db } from "@/server/db";
 import { AdminPage, AVAILABILITY_AZ, CATEGORY_AZ, Panel, StatusPill, Table, Tabs, fmtDate } from "@/components/admin/ui";
@@ -47,6 +48,7 @@ export default async function AdminListings({ searchParams }: { searchParams: SP
         id: true,
         category: true,
         status: true,
+        currency: true,
         monthlyRent: true,
         isVerified: true,
         isDemo: true,
@@ -132,7 +134,7 @@ export default async function AdminListings({ searchParams }: { searchParams: SP
                         {tr?.title ?? "—"}
                       </a>
                       <p className="text-ink-2">
-                        {CATEGORY_AZ[l.category]} · {l.district.nameAz} · {l.monthlyRent} ₼
+                        {CATEGORY_AZ[l.category]} · {l.district.nameAz} · {formatMoney(l.monthlyRent, l.currency, "az")}
                       </p>
                       <p className="mt-1 line-clamp-2 text-xs text-ink-3">{tr?.description}</p>
                       <p className="mt-1 flex flex-wrap gap-1.5">

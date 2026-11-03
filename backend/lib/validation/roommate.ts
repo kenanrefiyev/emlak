@@ -1,4 +1,7 @@
 import { z } from "zod";
+// Amounts are in the ad's currency, known only once its place is resolved; the
+// service narrows these wide bounds by that currency's scale.
+import { MAX_AMOUNT_SCALE } from "@/lib/money";
 import {
   CLEANING,
   CONTACT_PREFS,
@@ -24,8 +27,11 @@ export const roommateInputSchema = z
     title: requiredText(10, 120),
     description: requiredText(30, 3000),
     originalLocale: z.enum(["az", "tr", "ru", "en"]).default("az"),
+    // The city the ad is about (its country sets the currency); every place below must be in it.
+    // Required, but checked in superRefine so its error shows together with the others.
+    cityId: z.string().trim().optional(),
     // Scenario A — I have a place
-    monthlyContribution: optionalInt(PRICE_MIN, PRICE_MAX),
+    monthlyContribution: optionalInt(PRICE_MIN, PRICE_MAX * MAX_AMOUNT_SCALE),
     accommodationType: optionalChoice(LISTING_CATEGORIES),
     currentResidents: optionalInt(1, 20),
     availableSpaces: optionalInt(1, 10),
@@ -34,8 +40,8 @@ export const roommateInputSchema = z
     metroStationId: optionalId,
     houseRules: optionalText(1000),
     // Scenario B — looking for someone to rent with
-    budgetMin: optionalInt(PRICE_MIN, PRICE_MAX),
-    budgetMax: optionalInt(PRICE_MIN, PRICE_MAX),
+    budgetMin: optionalInt(PRICE_MIN, PRICE_MAX * MAX_AMOUNT_SCALE),
+    budgetMax: optionalInt(PRICE_MIN, PRICE_MAX * MAX_AMOUNT_SCALE),
     desiredPropertyType: optionalChoice(LISTING_CATEGORIES),
     groupSize: optionalInt(1, 6),
     preferredDistrictIds: z.array(z.string().max(40)).max(8).default([]),
@@ -56,6 +62,7 @@ export const roommateInputSchema = z
   })
   .superRefine((v, ctx) => {
     const req = (path: string) => ctx.addIssue({ code: "custom", path: [path], message: V.required });
+    if (!v.cityId) req("cityId");
     if (v.type === "HAS_PLACE") {
       if (v.monthlyContribution === undefined) req("monthlyContribution");
       if (!v.districtId) req("districtId");
@@ -82,6 +89,7 @@ export function normalizeRoommateInput(v: RoommateInput) {
     title: v.title,
     description: v.description,
     originalLocale: v.originalLocale,
+    cityId: v.cityId ?? "",
     monthlyContribution: a ? (v.monthlyContribution ?? null) : null,
     accommodationType: a ? (v.accommodationType ?? null) : null,
     currentResidents: a ? (v.currentResidents ?? null) : null,

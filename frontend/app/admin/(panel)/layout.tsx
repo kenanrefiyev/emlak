@@ -23,6 +23,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
     { href: "/admin/tesdiq", label: "Təsdiqlənmə sorğuları", badge: verifications },
     { href: "/admin/istifadeciler", label: "İstifadəçilər" },
     { href: "/admin/maklerler", label: "Maklerlər" },
+    { href: "/admin/olkeler", label: "Ölkələr və şəhərlər" },
     { href: "/admin/erazilar", label: "Ərazilər" },
     { href: "/admin/metro", label: "Metro stansiyaları" },
     { href: "/admin/universitetler", label: "Universitetlər" },

@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/server/auth/current";
+import { adminPlaceOptions } from "@/server/admin";
 import { db } from "@/server/db";
 import { AdminPage, LINE_AZ, Panel } from "@/components/admin/ui";
 import { ReferenceForm } from "@/components/admin/reference-form";
@@ -9,18 +10,19 @@ export const metadata = { title: "Metro stansiyaları" };
 
 export default async function AdminMetro() {
   await requireAdmin();
-  const [stations, districts] = await Promise.all([
+  const [stations, places] = await Promise.all([
     db.metroStation.findMany({ orderBy: [{ line: "asc" }, { nameAz: "asc" }], include: { _count: { select: { listings: true } } } }),
-    db.district.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameAz: true } }),
+    adminPlaceOptions(),
   ]);
   const fields = [
     { name: "line", label: "Xətt", type: "select" as const, required: true, options: Object.entries(LINE_AZ).map(([value, label]) => ({ value, label })) },
-    { name: "districtId", label: "Rayon", type: "select" as const, options: districts.map((d) => ({ value: d.id, label: d.nameAz })) },
+    { name: "cityId", label: "Şəhər", type: "select" as const, required: true, options: places.cities },
+    { name: "districtId", label: "Rayon", type: "select" as const, options: places.districts },
     { name: "latitude", label: "En dairəsi", type: "number" as const },
     { name: "longitude", label: "Uzunluq", type: "number" as const },
   ];
   return (
-    <AdminPage title="Metro stansiyaları" lead="Bakı metrosunun stansiyaları. Stansiyanın rayonu bilinmirsə boş saxlayın.">
+    <AdminPage title="Metro stansiyaları" lead="Şəhərlərin metro stansiyaları (hazırda Bakı). Stansiyanın rayonu bilinmirsə boş saxlayın.">
       <Panel title="Yeni stansiya">
         <ReferenceForm kind="metro" fields={fields} />
       </Panel>

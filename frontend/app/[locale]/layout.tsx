@@ -6,7 +6,7 @@ import { routing, type AppLocale } from "@/i18n/routing";
 import { onest } from "@/app/fonts";
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
-import { siteUrl } from "@/lib/seo";
+import { openGraphFor, siteUrl } from "@/lib/seo";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -24,8 +24,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: { default: t("homeTitle"), template: `%s · ${t("siteName")}` },
     description: t("homeDescription"),
     applicationName: t("siteName"),
-    openGraph: { siteName: t("siteName"), type: "website", locale },
-    icons: { icon: "/icon.svg" },
+    openGraph: openGraphFor(locale),
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "48x48" },
+        { url: "/icon.svg", type: "image/svg+xml" },
+      ],
+      apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+    },
   };
 }
 

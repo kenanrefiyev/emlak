@@ -2,12 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import { BAKU_CENTER, type LatLng } from "@/lib/baku-geo";
+import type { LatLng } from "@/lib/baku-geo";
 import type { NearbyMarker } from "./nearby-map";
 
 interface Props {
   /** Campus of the university filter, if any. */
   center: LatLng | null;
+  /** Where to look when there is nothing to fit: the searched city or market. */
+  fallback: LatLng;
   points: (NearbyMarker & { position: LatLng })[];
   labels: { open: string; university: string };
 }
@@ -19,7 +21,7 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};
  * NearbyMap). Pins sit at area level — metro station, neighborhood or district
  * centre — never at the private address.
  */
-export function ResultsMap({ center, points, labels }: Props) {
+export function ResultsMap({ center, fallback, points, labels }: Props) {
   const el = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function ResultsMap({ center, points, labels }: Props) {
     let cancelled = false;
     import("leaflet").then((L) => {
       if (cancelled || !el.current) return;
-      map = L.map(el.current, { scrollWheelZoom: false, zoomControl: true }).setView(center ?? BAKU_CENTER, 13);
+      map = L.map(el.current, { scrollWheelZoom: false, zoomControl: true }).setView(center ?? fallback, 12);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -60,7 +62,7 @@ export function ResultsMap({ center, points, labels }: Props) {
       cancelled = true;
       map?.remove();
     };
-  }, [center, points, labels]);
+  }, [center, fallback, points, labels]);
 
   return <div ref={el} className="nearby-map relative z-0 h-[420px] w-full overflow-hidden rounded-2xl border border-line bg-mist sm:h-[520px]" />;
 }

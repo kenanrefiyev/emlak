@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/server/db";
-import { buildListingWhere } from "@/server/listings/queries";
+import { buildListingWhere, ratesForFilters } from "@/server/listings/queries";
 import { parseListingFilters } from "@/lib/search/listing-filters";
 import { UNIVERSITY_RADIUS_KM, distanceKm, ownAreaPosition, universityPosition } from "@/lib/baku-geo";
 import type { NotificationType, Prisma } from "@/generated/prisma/client";
@@ -60,7 +60,9 @@ export async function notifySearchMatches(listingId: string) {
   for (const s of searches) {
     if (notified.has(s.userId)) continue;
     const f = parseListingFilters(new URLSearchParams(s.query), "students");
-    const hit = await db.listing.count({ where: { AND: [buildListingWhere(f, "students"), { id: listingId }] } });
+    // Searches saved before markets existed were all in Azerbaijan.
+    f.country ??= "az";
+    const hit = await db.listing.count({ where: { AND: [buildListingWhere(f, "students", new Date(), await ratesForFilters(f)), { id: listingId }] } });
     if (!hit) continue;
     if (f.university) {
       if (!unis.has(f.university)) {

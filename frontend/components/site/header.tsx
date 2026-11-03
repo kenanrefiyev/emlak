@@ -6,19 +6,35 @@ import type { AppLocale } from "@/i18n/routing";
 import { getCurrentUser } from "@/server/auth/current";
 import { savedCount } from "@/server/engagement";
 import { unreadNotificationCount } from "@/server/notifications";
+import { countryChoices, getCurrentCountry } from "@/server/countries";
+import { displayCurrencies, getMoneyView } from "@/server/money";
+import { RATES_SOURCE } from "@/server/exchange-rates";
+import { formatDate, formatTime } from "@/lib/format";
 import { Logo } from "./logo";
 import { LanguageSwitcher } from "./language-switcher";
+import { CountrySwitcher } from "./country-switcher";
+import { CurrencySwitcher, type CurrencyInfo } from "./currency-switcher";
 import { MobileNav } from "./mobile-nav";
 import { NavLinks } from "./nav-links";
 import { SavedLink, SavedToaster } from "./saved-indicator";
 import { logoutAction } from "@/app/[locale]/(auth)/actions";
 
 export async function SiteHeader({ locale }: { locale: AppLocale }) {
-  const [t, meta, user] = await Promise.all([
+  const [t, meta, user, countries, market, money, currencies] = await Promise.all([
     getTranslations({ locale, namespace: "nav" }),
     getTranslations({ locale, namespace: "meta" }),
     getCurrentUser(),
+    countryChoices(locale),
+    getCurrentCountry(),
+    getMoneyView(),
+    displayCurrencies(),
   ]);
+  const currency: CurrencyInfo = {
+    currencies,
+    ...money,
+    ratesUpdatedLabel: money.ratesUpdatedAt ? `${formatDate(money.ratesUpdatedAt, locale)}, ${formatTime(money.ratesUpdatedAt, locale)}` : null,
+    source: RATES_SOURCE,
+  };
   const links = [
     { href: "/students", label: t("students") },
     { href: "/roommates", label: t("roommates") },
@@ -30,7 +46,7 @@ export async function SiteHeader({ locale }: { locale: AppLocale }) {
 
   return (
     <header className="sticky top-0 z-40 bg-paper shadow-header">
-      <div className="mx-auto flex h-[70px] max-w-[1440px] items-center gap-6 px-4 xl:h-[78px] xl:gap-10 xl:px-[15px]">
+      <div className="mx-auto flex h-[70px] max-w-[1440px] items-center gap-6 px-4 xl:h-[78px] xl:px-[15px]">
         <Link href="/" className="shrink-0" aria-label={`Yuva — ${t("home")}`}>
           <Logo tagline={meta("logoTagline")} />
         </Link>
@@ -39,9 +55,11 @@ export async function SiteHeader({ locale }: { locale: AppLocale }) {
           <NavLinks links={links} />
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 xl:gap-3">
-          <div className="hidden md:block">
+        <div className="ml-auto flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             <Suspense>
+              {countries.length > 1 && <CountrySwitcher countries={countries} current={market.code} />}
+              {currencies.length > 1 && <CurrencySwitcher info={currency} />}
               <LanguageSwitcher />
             </Suspense>
           </div>
@@ -62,16 +80,24 @@ export async function SiteHeader({ locale }: { locale: AppLocale }) {
               </Link>
             </>
           ) : (
-            <Link href="/login" className="btn btn-outline hidden !px-7 md:inline-flex">
+            // Icon-only from xl, where the full nav, three selectors and long labels (ru) share one row.
+            <Link href="/login" className="btn btn-outline hidden !px-7 md:inline-flex xl:!px-4" aria-label={t("login")}>
               <UserRound className="size-5" aria-hidden />
-              {t("login")}
+              <span className="xl:sr-only">{t("login")}</span>
             </Link>
           )}
-          <Link href="/post" className="btn btn-primary hidden !px-7 sm:inline-flex">
+          <Link href="/post" className="btn btn-primary hidden !px-7 sm:inline-flex xl:!px-5">
             <FilePlus2 className="size-5" aria-hidden />
             {t("post")}
           </Link>
-          <MobileNav links={links} user={user ? { name: user.name, accountHref, isAdmin: user.role === "ADMIN" } : null} logout={logoutAction.bind(null, locale)} />
+          <MobileNav
+            links={links}
+            countries={countries}
+            country={market.code}
+            currency={currency}
+            user={user ? { name: user.name, accountHref, isAdmin: user.role === "ADMIN" } : null}
+            logout={logoutAction.bind(null, locale)}
+          />
         </div>
       </div>
       <SavedToaster />

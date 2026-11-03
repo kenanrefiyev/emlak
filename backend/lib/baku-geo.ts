@@ -99,7 +99,8 @@ export const DISTRICT_CENTERS: Record<string, LatLng> = {
 
 export const BAKU_CENTER: LatLng = [40.3953, 49.8822];
 
-type Place = { slug: string; latitude: number | null; longitude: number | null } | null | undefined;
+type Place = { slug: string; latitude?: number | null; longitude?: number | null } | null | undefined;
+type Point = { latitude: number | null; longitude: number | null } | null | undefined;
 
 function coordsOf(place: Place, table: Record<string, LatLng>): LatLng | null {
   if (!place) return null;
@@ -107,18 +108,24 @@ function coordsOf(place: Place, table: Record<string, LatLng>): LatLng | null {
   return table[place.slug] ?? null;
 }
 
-/** Area-level position of a listing; admin-set coordinates win over the built-in table. */
+/**
+ * Area-level position of a listing; admin-set coordinates win over the built-in
+ * table. Falls back from the finest known place to the district and then its
+ * city, so a listing outside Baku is never placed in Baku.
+ */
 export function approxPosition(l: {
   metroStation?: Place;
   neighborhood?: Place;
   university?: Place;
-  district: { slug: string };
+  district: NonNullable<Place> & { city?: Point };
 }): LatLng {
+  const city = l.district.city;
   return (
     coordsOf(l.metroStation, METRO_COORDS) ??
     coordsOf(l.neighborhood, NEIGHBORHOOD_COORDS) ??
     coordsOf(l.university, UNIVERSITY_COORDS) ??
-    DISTRICT_CENTERS[l.district.slug] ??
+    coordsOf(l.district, DISTRICT_CENTERS) ??
+    (city?.latitude != null && city.longitude != null ? ([city.latitude, city.longitude] as LatLng) : null) ??
     BAKU_CENTER
   );
 }

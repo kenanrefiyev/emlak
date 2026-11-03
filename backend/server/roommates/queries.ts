@@ -7,6 +7,9 @@ import { nameOf, nameSelect } from "@/lib/i18n-data";
 import { PAGE_SIZE } from "@/lib/domain";
 import type { RoommateFilters } from "@/lib/search/roommate-filters";
 import { matchAds, type MatchableAd, type MatchResult } from "@/lib/matching";
+import { roommateInCity, roommateInCountry } from "@/server/countries";
+import { getRates } from "@/server/exchange-rates";
+import { convertBound, type Rates } from "@/lib/money";
 
 export function publicRoommateWhere(now = new Date()): Prisma.RoommateAdWhereInput {
   return { status: "PUBLISHED", expiresAt: { gt: now }, owner: { status: "ACTIVE" } };
@@ -18,6 +21,7 @@ const cardSelect = {
   title: true,
   originalLocale: true,
   isDemo: true,
+  currency: true,
   monthlyContribution: true,
   budgetMin: true,
   budgetMax: true,
@@ -35,6 +39,7 @@ const cardSelect = {
   noise: true,
   districtId: true,
   publishedAt: true,
+  city: { select: { slug: true, country: { select: { code: true } }, ...nameSelect } },
   district: { select: nameSelect },
   neighborhood: { select: nameSelect },
   metroStation: { select: { line: true, ...nameSelect } },
@@ -74,6 +79,7 @@ function toCard(r: Row, locale: AppLocale, match?: MatchResult | null) {
     title: r.title,
     originalLocale: r.originalLocale as AppLocale,
     isDemo: r.isDemo,
+    currency: r.currency,
     monthlyContribution: r.monthlyContribution,
     budgetMin: r.budgetMin,
     budgetMax: r.budgetMax,
@@ -90,6 +96,7 @@ function toCard(r: Row, locale: AppLocale, match?: MatchResult | null) {
         ? nameOf(r.district, locale)
         : [r.neighborhood ? nameOf(r.neighborhood, locale) : null, nameOf(r.district, locale)].filter(Boolean).join(", ")
       : r.preferredDistricts.map((p) => nameOf(p.district, locale)).join(", "),
+    city: r.city ? nameOf(r.city, locale) : null,
     metro: r.metroStation ? { name: nameOf(r.metroStation, locale), line: r.metroStation.line } : null,
     university: r.university?.shortName ?? null,
     firstName: r.owner.name.split(" ")[0] ?? r.owner.name,
@@ -100,19 +107,30 @@ function toCard(r: Row, locale: AppLocale, match?: MatchResult | null) {
 
 export type RoommateCardData = ReturnType<typeof toCard>;
 
-export function buildRoommateWhere(f: RoommateFilters, now = new Date()): Prisma.RoommateAdWhereInput {
+/** "What I can pay": ads whose share (or lowest budget) fits, compared in each ad's own currency. */
+function budgetWhere(budget: number, from: string | undefined, rates: Rates | null): Prisma.RoommateAdWhereInput {
+  const fits = (b: number): Prisma.RoommateAdWhereInput[] => [
+    { type: "HAS_PLACE", monthlyContribution: { lte: b } },
+    { type: "SEEKING_PARTNER", budgetMin: { lte: b } },
+  ];
+  // Budgets from before ads had currencies (old links, saved searches) compare raw amounts.
+  if (!from) return { OR: fits(budget) };
+  const or: Prisma.RoommateAdWhereInput[] = [];
+  for (const c of new Set([from, ...Object.keys(rates ?? {})])) {
+    const b = convertBound(budget, from, c, rates, "max");
+    if (b !== null) or.push({ currency: c, OR: fits(b) });
+  }
+  return { OR: or };
+}
+
+export function buildRoommateWhere(f: RoommateFilters, now = new Date(), rates: Rates | null = null): Prisma.RoommateAdWhereInput {
   const and: Prisma.RoommateAdWhereInput[] = [publicRoommateWhere(now)];
   if (f.type) and.push({ type: f.type });
-  if (f.district)
-    and.push({ OR: [{ district: { slug: f.district } }, { preferredDistricts: { some: { district: { slug: f.district } } } }] });
+  if (f.country) and.push(roommateInCountry(f.country));
+  if (f.city) and.push(roommateInCity(f.city));
+  if (f.district) and.push({ OR: [{ district: { slug: f.district } }, { preferredDistricts: { some: { district: { slug: f.district } } } }] });
   if (f.university) and.push({ university: { slug: f.university } });
-  if (f.budget)
-    and.push({
-      OR: [
-        { type: "HAS_PLACE", monthlyContribution: { lte: f.budget } },
-        { type: "SEEKING_PARTNER", budgetMin: { lte: f.budget } },
-      ],
-    });
+  if (f.budget) and.push(budgetWhere(f.budget, f.budgetCurrency, rates));
   if (f.moveIn) {
     const d = new Date(`${f.moveIn}T00:00:00Z`).getTime();
     and.push({ moveInDate: { gte: new Date(d - 30 * 86_400_000), lte: new Date(d + 30 * 86_400_000) } });
@@ -134,7 +152,8 @@ export const viewerReferenceAd = cache(async (userId: string | undefined) => {
 });
 
 export async function searchRoommates(f: RoommateFilters, locale: AppLocale, viewerId?: string) {
-  const where = buildRoommateWhere(f);
+  const rates = f.budget && f.budgetCurrency ? ((await getRates())?.rates ?? null) : null;
+  const where = buildRoommateWhere(f, new Date(), rates);
   const reference = await viewerReferenceAd(viewerId);
   const total = await db.roommateAd.count({ where });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -186,7 +205,13 @@ export async function matchesForAd(adId: string, ownerId: string, locale: AppLoc
   const reference = toMatchable(own);
   const rows = await db.roommateAd.findMany({
     where: {
-      AND: [publicRoommateWhere(), { ownerId: { not: ownerId } }, own.type === "HAS_PLACE" ? { type: "SEEKING_PARTNER" } : {}],
+      AND: [
+        publicRoommateWhere(),
+        { ownerId: { not: ownerId } },
+        own.type === "HAS_PLACE" ? { type: "SEEKING_PARTNER" } : {},
+        // Matches stay inside the ad's own market.
+        own.city ? roommateInCountry(own.city.country.code) : {},
+      ],
     },
     select: cardSelect,
     take: 500,
@@ -206,6 +231,7 @@ export const getRoommateDetail = cache(async (id: string, viewer: { id: string; 
     where: { id },
     include: {
       district: true,
+      city: true,
       neighborhood: true,
       metroStation: true,
       university: true,

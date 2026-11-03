@@ -58,10 +58,12 @@ async function jpeg(w = 800, h = 600) {
 
 let yasamal: string;
 let nesimi: string;
+let baku: string;
 
 beforeAll(async () => {
   await cleanup();
   yasamal = (await db.district.findUniqueOrThrow({ where: { slug: "yasamal" } })).id;
+  baku = (await db.city.findUniqueOrThrow({ where: { slug: "baku" } })).id;
   nesimi = (await db.district.findUniqueOrThrow({ where: { slug: "nesimi" } })).id;
 });
 afterAll(async () => {
@@ -221,7 +223,7 @@ describe("roommates", () => {
     const a = await makeUser("mateA");
     const b = await makeUser("mateB");
     const admin = await makeUser("admin2", "ADMIN");
-    const common = { description: "Sakit, səliqəli tələbəyəm, dərsə çox vaxt ayırıram.", moveInDate: "2026-11-05", durationMonths: "9", smoking: "NO_SMOKING", cleaning: "ROTA", sleepSchedule: "EARLY", guests: "RARELY" };
+    const common = { cityId: baku, description: "Sakit, səliqəli tələbəyəm, dərsə çox vaxt ayırıram.", moveInDate: "2026-11-05", durationMonths: "9", smoking: "NO_SMOKING", cleaning: "ROTA", sleepSchedule: "EARLY", guests: "RARELY" };
     const place = await createRoommateAd(a, parseRoommateInput({ ...common, type: "HAS_PLACE", title: "Yasamalda otağım var, yoldaş axtarıram", monthlyContribution: "250", accommodationType: "SHARED_APARTMENT", currentResidents: "1", availableSpaces: "1", districtId: yasamal }));
     const seek = await createRoommateAd(b, parseRoommateInput({ ...common, type: "SEEKING_PARTNER", title: "Yasamalda birlikdə ev tutmaq istəyirəm", budgetMin: "200", budgetMax: "280", groupSize: "1", desiredPropertyType: "SHARED_APARTMENT", preferredDistrictIds: [yasamal, nesimi] }));
 

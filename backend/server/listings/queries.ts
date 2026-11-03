@@ -8,6 +8,9 @@ import { UNIVERSITY_RADIUS_KM, approxPosition, distanceKm, ownAreaPosition, spre
 import { PAGE_SIZE, SEGMENTS, type Segment } from "@/lib/domain";
 import type { ListingFilters } from "@/lib/search/listing-filters";
 import { rentalCosts, type Total } from "@/lib/costs";
+import { listingInCity, listingInCountry } from "@/server/countries";
+import { getRates } from "@/server/exchange-rates";
+import { convertBound, type Rates } from "@/lib/money";
 
 /** A listing is publicly visible only while published, unexpired and its owner is active. */
 export function publicListingWhere(now = new Date()): Prisma.ListingWhereInput {
@@ -18,6 +21,7 @@ const cardSelect = (locale: AppLocale) =>
   ({
     id: true,
     category: true,
+    currency: true,
     monthlyRent: true,
     pricePerPlace: true,
     deposit: true,
@@ -64,6 +68,8 @@ export interface ListingCardData {
   title: string;
   /** true when the title is shown in a language other than the visitor's */
   titleLocale: AppLocale;
+  /** ISO 4217 currency of every amount on the card (the listing's own). */
+  currency: string;
   monthlyRent: number;
   pricePerPlace: boolean;
   commission: boolean;
@@ -110,6 +116,7 @@ function toCard(row: CardRow, locale: AppLocale): ListingCardData {
     category: row.category,
     title: tr?.title ?? "—",
     titleLocale: (tr?.locale as AppLocale) ?? row.originalLocale,
+    currency: row.currency,
     monthlyRent: row.monthlyRent,
     pricePerPlace: row.pricePerPlace,
     commission: row.commissionType !== "NONE",
@@ -142,17 +149,43 @@ function toCard(row: CardRow, locale: AppLocale): ListingCardData {
   };
 }
 
+/**
+ * A monthly-rent range typed in `from`, matched against listings in any
+ * currency: each currency gets the range converted at current rates. Without
+ * a rate a currency is left out rather than compared as if it were `from`.
+ */
+export function priceRangeWhere(min: number | undefined, max: number | undefined, from: string | undefined, rates: Rates | null): Prisma.ListingWhereInput {
+  // Ranges from before listings had currencies (old links, saved searches) compare raw amounts.
+  if (!from) return { monthlyRent: { gte: min, lte: max } };
+  const currencies = [...new Set([from, ...Object.keys(rates ?? {})])];
+  const or: Prisma.ListingWhereInput[] = [];
+  for (const c of currencies) {
+    const lo = min === undefined ? undefined : convertBound(min, from, c, rates, "min");
+    const hi = max === undefined ? undefined : convertBound(max, from, c, rates, "max");
+    if (lo === null || hi === null) continue;
+    or.push({ currency: c, monthlyRent: { gte: lo, lte: hi } });
+  }
+  return { OR: or };
+}
+
+/** Rates for a price filter, fetched only when the filter has a price range in a given currency. */
+export async function ratesForFilters(f: ListingFilters): Promise<Rates | null> {
+  if (!f.priceCurrency || (f.priceMin === undefined && f.priceMax === undefined)) return null;
+  return (await getRates())?.rates ?? null;
+}
+
 /** Translates URL filters into an indexed Prisma where clause. */
-export function buildListingWhere(f: ListingFilters, segment?: Segment, now = new Date()): Prisma.ListingWhereInput {
+export function buildListingWhere(f: ListingFilters, segment?: Segment, now = new Date(), rates: Rates | null = null): Prisma.ListingWhereInput {
   const and: Prisma.ListingWhereInput[] = [publicListingWhere(now)];
   const allowed = segment ? [...SEGMENTS[segment]] : undefined;
   const cats = f.categories.length ? f.categories : allowed;
   if (cats) and.push({ category: { in: cats } });
+  if (f.country) and.push(listingInCountry(f.country));
+  if (f.city) and.push(listingInCity(f.city));
   if (f.district) and.push({ district: { slug: f.district } });
   if (f.neighborhood) and.push({ neighborhood: { slug: f.neighborhood } });
   if (f.metro) and.push({ metroStation: { slug: f.metro } });
-  if (f.priceMin !== undefined || f.priceMax !== undefined)
-    and.push({ monthlyRent: { gte: f.priceMin ?? undefined, lte: f.priceMax ?? undefined } });
+  if (f.priceMin !== undefined || f.priceMax !== undefined) and.push(priceRangeWhere(f.priceMin, f.priceMax, f.priceCurrency, rates));
   if (f.rooms) and.push({ rooms: f.rooms >= 4 ? { gte: 4 } : f.rooms });
   if (f.spaces) and.push({ availableSpaces: { gte: f.spaces } });
   if (f.furnishing) and.push({ furnishing: f.furnishing });
@@ -193,6 +226,8 @@ function orderOf(sort: ListingFilters["sort"]): Prisma.ListingOrderByWithRelatio
 }
 
 const placeFields = { slug: true, latitude: true, longitude: true } as const;
+/** A district with what approxPosition needs to fall back to it, then to its city. */
+const districtPlaceSelect = { select: { ...placeFields, city: { select: { latitude: true, longitude: true } } } } as const;
 
 /**
  * Listings matching `where` whose own area lies within UNIVERSITY_RADIUS_KM of
@@ -228,7 +263,7 @@ async function searchNearUniversity(f: ListingFilters & { university: string }, 
   const uni = await db.university.findUnique({ where: { slug: f.university }, select: { shortName: true, ...placeFields } });
   const center = uni ? universityPosition(uni) : null;
   if (!uni || !center) return { items: [], total: 0, page: 1, pageCount: 1 };
-  const near = await listingsNearPoint(center, buildListingWhere(f, segment));
+  const near = await listingsNearPoint(center, buildListingWhere(f, segment, new Date(), await ratesForFilters(f)));
   if (f.sort === "price_asc") near.sort((a, b) => a.monthlyRent - b.monthlyRent || a.km - b.km);
   if (f.sort === "price_desc") near.sort((a, b) => b.monthlyRent - a.monthlyRent || a.km - b.km);
   const total = near.length;
@@ -262,6 +297,7 @@ export async function countsNearUniversities(unis: { slug: string; latitude: num
 export interface MapPoint {
   id: string;
   title: string;
+  currency: string;
   monthlyRent: number;
   position: LatLng;
   image: string | null;
@@ -273,7 +309,7 @@ export interface MapPoint {
  * Listings with only a district are placed at the district centre.
  */
 export async function searchMapPoints(f: ListingFilters, locale: AppLocale, segment?: Segment) {
-  let where = buildListingWhere(f, segment);
+  let where = buildListingWhere(f, segment, new Date(), await ratesForFilters(f));
   let center: LatLng | null = null;
   if (f.university) {
     const uni = await db.university.findUnique({ where: { slug: f.university }, select: placeFields });
@@ -288,8 +324,9 @@ export async function searchMapPoints(f: ListingFilters, locale: AppLocale, segm
     take: 401,
     select: {
       id: true,
+      currency: true,
       monthlyRent: true,
-      district: { select: { slug: true } },
+      district: districtPlaceSelect,
       metroStation: placeSelect,
       neighborhood: placeSelect,
       university: placeSelect,
@@ -300,6 +337,7 @@ export async function searchMapPoints(f: ListingFilters, locale: AppLocale, segm
   const points: MapPoint[] = rows.slice(0, 400).map((r) => ({
     id: r.id,
     title: pickTranslation(r.translations, locale)?.title ?? "—",
+    currency: r.currency,
     monthlyRent: r.monthlyRent,
     position: spread(approxPosition(r), r.id),
     image: r.images[0]?.url ?? null,
@@ -309,7 +347,7 @@ export async function searchMapPoints(f: ListingFilters, locale: AppLocale, segm
 
 export async function searchListings(f: ListingFilters, locale: AppLocale, segment?: Segment) {
   if (f.university) return searchNearUniversity({ ...f, university: f.university }, locale, segment);
-  const where = buildListingWhere(f, segment);
+  const where = buildListingWhere(f, segment, new Date(), await ratesForFilters(f));
   const total = await db.listing.count({ where });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(f.page, pageCount);
@@ -338,13 +376,14 @@ export async function listingCards(
   return rows.map((r) => toCard(r, locale));
 }
 
-export async function featuredListingCards(locale: AppLocale, take: number, segment?: Segment) {
+export async function featuredListingCards(locale: AppLocale, take: number, segment?: Segment, country?: string) {
   const now = new Date();
   return listingCards(
     locale,
     {
       featured: { some: { startsAt: { lte: now }, endsAt: { gt: now } } },
       ...(segment ? { category: { in: [...SEGMENTS[segment]] } } : {}),
+      ...(country ? listingInCountry(country) : {}),
     },
     take,
   );
@@ -366,7 +405,7 @@ export const getListingDetail = cache(async (id: string, viewer: { id: string; r
       translations: true,
       images: { orderBy: { position: "asc" } },
       amenities: { include: { amenity: true }, orderBy: { amenity: { sortOrder: "asc" } } },
-      district: true,
+      district: { include: { city: { include: { country: { select: { code: true, currency: true } } } } } },
       neighborhood: true,
       metroStation: true,
       university: { include: { nearestMetro: true } },
@@ -411,6 +450,7 @@ const placeSelect = { select: { slug: true, latitude: true, longitude: true } } 
 export interface NearbyMapPoint {
   id: string;
   title: string;
+  currency: string;
   monthlyRent: number;
   pricePerPlace: boolean;
   category: CardRow["category"];
@@ -438,9 +478,10 @@ export async function nearbyListings(
     select: {
       id: true,
       category: true,
+      currency: true,
       monthlyRent: true,
       pricePerPlace: true,
-      district: { select: { slug: true } },
+      district: districtPlaceSelect,
       metroStation: placeSelect,
       neighborhood: placeSelect,
       university: placeSelect,
@@ -454,6 +495,7 @@ export async function nearbyListings(
       return {
         id: r.id,
         title: pickTranslation(r.translations, locale)?.title ?? "—",
+        currency: r.currency,
         monthlyRent: r.monthlyRent,
         pricePerPlace: r.pricePerPlace,
         category: r.category,

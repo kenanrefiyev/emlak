@@ -6,6 +6,8 @@ import { ActionForm, CheckboxField, Field, FormError, SubmitButton } from "@/com
 import { createRoommateAction, updateRoommateAction } from "@/app/[locale]/account/actions";
 import { CLEANING, CONTACT_PREFS, GENDER_PREFS, GUESTS, LISTING_CATEGORIES, NOISE, SLEEP, SMOKING, type RoommateType } from "@/lib/domain";
 import type { LocationOptions } from "@/server/locations";
+import { GroupedOptions } from "@/components/forms/grouped-options";
+import { amountScale, currencySymbol } from "@/lib/money";
 import { locales } from "@/i18n/routing";
 
 export interface RoommateFormValues {
@@ -14,6 +16,7 @@ export interface RoommateFormValues {
   title: string;
   description: string;
   originalLocale: string;
+  cityId?: string | null;
   monthlyContribution?: number | null;
   accommodationType?: string | null;
   currentResidents?: number | null;
@@ -41,7 +44,23 @@ export interface RoommateFormValues {
   contactPreference: string;
 }
 
-export function RoommateForm({ values, options }: { values: RoommateFormValues; options: LocationOptions }) {
+/**
+ * Create/edit form for a roommate ad. The country and city come first: every
+ * place below (district, metro, university, preferred districts) is offered
+ * only from the chosen city, and amounts are in that country's currency.
+ * `options` holds the places of all markets.
+ */
+export function RoommateForm({
+  values,
+  options,
+  countries,
+  defaultCountry,
+}: {
+  values: RoommateFormValues;
+  options: LocationOptions;
+  countries: { code: string; name: string; currency: string }[];
+  defaultCountry: string;
+}) {
   const t = useTranslations("roommateForm");
   const r = useTranslations("roommates");
   const e = useTranslations("enums");
@@ -51,6 +70,14 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
   const locale = useLocale();
   const [type, setType] = useState<RoommateType>(values.type);
   const [district, setDistrict] = useState(values.districtId ?? "");
+  const [country, setCountry] = useState(options.cities.find((x) => x.value === values.cityId)?.country ?? defaultCountry);
+  const [city, setCity] = useState(values.cityId ?? "");
+  const inCity = <T extends { cityValue: string }>(list: T[]) => list.filter((o) => o.cityValue === city);
+  const cityDistricts = inCity(options.districts);
+  const currency = countries.find((x) => x.code === country)?.currency ?? "AZN";
+  const sym = { currency: currencySymbol(currency) };
+  const lo = 30 * amountScale(currency);
+  const hi = 20000 * amountScale(currency);
   const editing = Boolean(values.id);
   const v = (x: number | string | null | undefined) => (x == null ? "" : String(x));
 
@@ -108,11 +135,57 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
         </Field>
       </fieldset>
 
+      <fieldset className="grid gap-5 sm:grid-cols-2">
+        <legend className="t-h3 mb-4">{t("sectionLocation")}</legend>
+        <Field name="country" label={t("country")} required>
+          {(p) => (
+            <select
+              {...p}
+              value={country}
+              onChange={(ev) => {
+                setCountry(ev.target.value);
+                setCity("");
+                setDistrict("");
+              }}
+              className="field"
+            >
+              {countries.map((x) => (
+                <option key={x.code} value={x.code}>
+                  {x.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <Field name="cityId" label={t("city")} hint={t("cityHint")} required>
+          {(p) => (
+            <select
+              {...p}
+              value={city}
+              onChange={(ev) => {
+                setCity(ev.target.value);
+                setDistrict("");
+              }}
+              className="field"
+            >
+              <option value="">—</option>
+              {options.cities
+                .filter((x) => x.country === country)
+                .map((x) => (
+                  <option key={x.value} value={x.value}>
+                    {x.label}
+                  </option>
+                ))}
+            </select>
+          )}
+        </Field>
+      </fieldset>
+
       {type === "HAS_PLACE" ? (
         <fieldset className="grid gap-5 sm:grid-cols-2">
           <legend className="t-h3 mb-4">{t("sectionPlace")}</legend>
-          <Field name="monthlyContribution" label={t("contribution")} required>
-            {(p) => <input {...p} type="number" inputMode="numeric" min={30} max={20000} defaultValue={v(values.monthlyContribution)} className="field" />}
+          <Field name="monthlyContribution" label={t("contribution", sym)} required>
+            {(p) => <input {...p} type="number" inputMode="numeric" min={lo} max={hi} defaultValue={v(values.monthlyContribution)} className="field" />}
           </Field>
           <Field name="accommodationType" label={t("homeType")} required>
             {(p) => (
@@ -134,13 +207,9 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
           </Field>
           <Field name="districtId" label={t("district")} required>
             {(p) => (
-              <select {...p} value={district} onChange={(ev) => setDistrict(ev.target.value)} className="field">
-                <option value="">—</option>
-                {options.districts.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
+              <select {...p} value={district} onChange={(ev) => setDistrict(ev.target.value)} disabled={!city} className="field">
+                <option value="">{city ? "—" : t("chooseCityFirst")}</option>
+                <GroupedOptions options={cityDistricts} />
               </select>
             )}
           </Field>
@@ -158,18 +227,20 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
               </select>
             )}
           </Field>
-          <Field name="metroStationId" label={t("metro")}>
-            {(p) => (
-              <select {...p} defaultValue={values.metroStationId ?? ""} className="field">
-                <option value="">—</option>
-                {options.metros.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
+          {inCity(options.metros).length > 0 && (
+            <Field name="metroStationId" label={t("metro")}>
+              {(p) => (
+                <select {...p} key={city} defaultValue={values.metroStationId ?? ""} className="field">
+                  <option value="">—</option>
+                  {inCity(options.metros).map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          )}
           <Field name="houseRules" label={t("houseRules")} hint={t("houseRulesHint")} className="sm:col-span-2">
             {(p) => <textarea {...p} defaultValue={values.houseRules ?? ""} rows={3} maxLength={1000} className="field" />}
           </Field>
@@ -177,11 +248,11 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
       ) : (
         <fieldset className="grid gap-5 sm:grid-cols-2">
           <legend className="t-h3 mb-4">{t("sectionSearch")}</legend>
-          <Field name="budgetMin" label={t("budgetMin")} required>
-            {(p) => <input {...p} type="number" inputMode="numeric" min={30} max={20000} defaultValue={v(values.budgetMin)} className="field" />}
+          <Field name="budgetMin" label={t("budgetMin", sym)} required>
+            {(p) => <input {...p} type="number" inputMode="numeric" min={lo} max={hi} defaultValue={v(values.budgetMin)} className="field" />}
           </Field>
-          <Field name="budgetMax" label={t("budgetMax")} required>
-            {(p) => <input {...p} type="number" inputMode="numeric" min={30} max={20000} defaultValue={v(values.budgetMax)} className="field" />}
+          <Field name="budgetMax" label={t("budgetMax", sym)} required>
+            {(p) => <input {...p} type="number" inputMode="numeric" min={lo} max={hi} defaultValue={v(values.budgetMax)} className="field" />}
           </Field>
           <Field name="desiredPropertyType" label={t("desiredHome")}>
             {(p) => (
@@ -198,7 +269,13 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
           <Field name="groupSize" label={t("groupSize")} hint={t("groupSizeHint")} required>
             {(p) => <input {...p} type="number" min={1} max={6} defaultValue={v(values.groupSize ?? 1)} className="field" />}
           </Field>
-          <PreferredDistricts label={t("preferredDistricts")} hint={t("preferredDistrictsHint")} districts={options.districts} selected={values.preferredDistrictIds} />
+          <PreferredDistricts
+            key={city}
+            label={t("preferredDistricts")}
+            hint={city ? t("preferredDistrictsHint") : t("chooseCityFirst")}
+            districts={cityDistricts}
+            selected={values.preferredDistrictIds}
+          />
         </fieldset>
       )}
 
@@ -206,9 +283,9 @@ export function RoommateForm({ values, options }: { values: RoommateFormValues; 
         <legend className="t-h3 mb-4">{t("sectionLifestyle")}</legend>
         <Field name="universityId" label={t("university")}>
           {(p) => (
-            <select {...p} defaultValue={values.universityId ?? ""} className="field">
-              <option value="">—</option>
-              {options.universities.map((u) => (
+            <select {...p} key={city} defaultValue={values.universityId ?? ""} className="field">
+              <option value="">{city ? "—" : t("chooseCityFirst")}</option>
+              {inCity(options.universities).map((u) => (
                 <option key={u.value} value={u.value}>
                   {u.label}
                 </option>

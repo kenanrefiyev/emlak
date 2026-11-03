@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { numberTags, type AppLocale } from "@/i18n/routing";
 
 export interface BarPoint {
   /** ISO day, yyyy-mm-dd */
@@ -56,7 +57,7 @@ export function BarChart({
     <figure className="min-w-0">
       <figcaption className="flex items-baseline justify-between gap-3">
         <span className="font-semibold">{title}</span>
-        <span className="text-sm text-ink-2 tabular-nums">{total.toLocaleString(locale)}</span>
+        <span className="text-sm text-ink-2 tabular-nums">{total.toLocaleString(numberTags[locale as AppLocale])}</span>
       </figcaption>
       <div className="relative mt-3">
         <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-labelledby={`${id}-desc`} onMouseLeave={() => setActive(null)}>
@@ -67,7 +68,7 @@ export function BarChart({
               <g key={g}>
                 <line x1={padL} x2={W} y1={y} y2={y} stroke="var(--color-line)" strokeWidth={1} />
                 <text x={padL - 6} y={y + 4} textAnchor="end" fontSize="11" fill="var(--color-ink-3, #8a9099)">
-                  {Math.round(g).toLocaleString(locale)}
+                  {Math.round(g).toLocaleString(numberTags[locale as AppLocale])}
                 </text>
               </g>
             );
@@ -117,7 +118,7 @@ export function BarChart({
           >
             <span className="block text-white/70">{fmtDay(a.day, { year: true })}</span>
             <span className="font-semibold tabular-nums">
-              {a.value.toLocaleString(locale)} {valueLabel}
+              {a.value.toLocaleString(numberTags[locale as AppLocale])} {valueLabel}
             </span>
           </div>
         )}

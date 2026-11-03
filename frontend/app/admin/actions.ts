@@ -124,7 +124,7 @@ export async function packageAction(_p: ActionState, fd: FormData): Promise<Acti
   }
 }
 
-const KINDS: LocationKind[] = ["district", "neighborhood", "metro", "university", "amenity"];
+const KINDS: LocationKind[] = ["country", "city", "district", "neighborhood", "metro", "university", "amenity"];
 
 export async function referenceAction(_p: ActionState, fd: FormData): Promise<ActionState> {
   try {

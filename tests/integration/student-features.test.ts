@@ -38,6 +38,7 @@ async function expectCode(p: Promise<unknown>, code: string) {
 }
 
 let yasamal: string;
+let baku: string;
 let owner: Actor & { name: string };
 let student: Actor & { name: string };
 let stranger: Actor & { name: string };
@@ -46,6 +47,7 @@ let admin: Actor & { name: string };
 beforeAll(async () => {
   await cleanup();
   yasamal = (await db.district.findUniqueOrThrow({ where: { slug: "yasamal" } })).id;
+  baku = (await db.city.findUniqueOrThrow({ where: { slug: "baku" } })).id;
   owner = await makeUser("sf-owner", "OWNER");
   student = await makeUser("sf-student");
   stranger = await makeUser("sf-stranger");
@@ -202,6 +204,7 @@ describe("roommate profiles", () => {
       stranger,
       parseRoommateInput({
         type: "SEEKING_PARTNER",
+        cityId: baku,
         title: "Yasamalda birlikdə ev tutmaq istəyirəm",
         description: "Sakit, səliqəli tələbəyəm, dərsə çox vaxt ayırıram.",
         budgetMin: "200",
