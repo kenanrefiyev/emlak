@@ -1,10 +1,5 @@
 import { localeTags, type AppLocale } from "@/i18n/routing";
 
-/** AZN amounts are whole manats; the ₼ sign follows the number in every locale. */
-export function formatAzn(amount: number, locale: AppLocale): string {
-  return `${new Intl.NumberFormat(localeTags[locale], { maximumFractionDigits: 0 }).format(amount)} ₼`;
-}
-
 export function formatDate(date: Date | string, locale: AppLocale, opts?: Intl.DateTimeFormatOptions): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat(localeTags[locale], {
@@ -14,6 +9,10 @@ export function formatDate(date: Date | string, locale: AppLocale, opts?: Intl.D
     timeZone: "Asia/Baku",
     ...opts,
   }).format(d);
+}
+
+export function formatTime(date: Date | string, locale: AppLocale): string {
+  return new Intl.DateTimeFormat(localeTags[locale], { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" }).format(typeof date === "string" ? new Date(date) : date);
 }
 
 export function formatShortDate(date: Date | string, locale: AppLocale): string {

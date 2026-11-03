@@ -11,8 +11,11 @@ import {
   type ListingFilters,
 } from "@/lib/search/listing-filters";
 import { featuredListingCards, searchListings, searchMapPoints } from "@/server/listings/queries";
-import { formatAzn } from "@/lib/format";
+import { displayPriceText, formatMoney } from "@/lib/money";
+import { getMoneyView } from "@/server/money";
+import type { LatLng } from "@/lib/baku-geo";
 import { getLocationOptions } from "@/server/locations";
+import { countryChoices, resolveCountry } from "@/server/countries";
 import { getCurrentUser } from "@/server/auth/current";
 import { savedIdsFor } from "@/server/engagement";
 import { formatShortDate } from "@/lib/format";
@@ -25,21 +28,46 @@ import { ResultsMap } from "./results-map";
 import { Pagination } from "@/components/site/pagination";
 import { EmptyState } from "@/components/site/section";
 
-export async function ListingSearchPage({ locale, segment, filters }: { locale: AppLocale; segment: Segment; filters: ListingFilters }) {
+/**
+ * The listing search. City landing pages reuse it with their own heading and
+ * intro; refining the search there continues on the main search page.
+ */
+export async function ListingSearchPage({
+  locale,
+  segment,
+  filters,
+  heading,
+  intro,
+}: {
+  locale: AppLocale;
+  segment: Segment;
+  filters: ListingFilters;
+  heading?: string;
+  intro?: React.ReactNode;
+}) {
   const path = segment === "students" ? "/students" : "/family";
-  const [t, c, cat, e, user, options] = await Promise.all([
+  // Links keep the URL as given; queries always run inside one market.
+  const market = await resolveCountry(filters.country);
+  const scoped: ListingFilters = { ...filters, country: market.code };
+  const [t, c, cat, e, user, options, countries, money] = await Promise.all([
     getTranslations({ locale, namespace: "search" }),
     getTranslations({ locale, namespace: "common" }),
     getTranslations({ locale, namespace: "categories" }),
     getTranslations({ locale, namespace: "enums" }),
     getCurrentUser(),
-    getLocationOptions(locale, "slug"),
+    getLocationOptions(locale, "slug", market.code),
+    countryChoices(locale),
+    getMoneyView(),
   ]);
+  // A typed price range keeps the currency it was typed in; a new one uses the display currency.
+  const priceCurrency = filters.priceCurrency ?? money.display;
+  const searchedCity = market.cities.find((c) => c.slug === filters.city) ?? market.cities[0];
+  const mapFallback: LatLng = [searchedCity?.latitude ?? market.latitude ?? 0, searchedCity?.longitude ?? market.longitude ?? 0];
   const isMap = filters.view === "map";
   const [result, featured, map] = await Promise.all([
-    searchListings(filters, locale, segment),
-    filters.page === 1 && !isMap ? featuredListingCards(locale, 3, segment) : Promise.resolve([]),
-    isMap ? searchMapPoints(filters, locale, segment) : Promise.resolve(null),
+    searchListings(scoped, locale, segment),
+    filters.page === 1 && !isMap ? featuredListingCards(locale, 3, segment, market.code) : Promise.resolve([]),
+    isMap ? searchMapPoints(scoped, locale, segment) : Promise.resolve(null),
   ]);
   const saved = await savedIdsFor(user?.id, [...result.items, ...featured].map((l) => l.id));
   const query = listingFiltersToQuery({ ...filters, page: 1 });
@@ -52,6 +80,8 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
         return t("chipQuery", { q: filters.q ?? "" });
       case "categories":
         return filters.categories.map((x) => cat(x)).join(", ");
+      case "city":
+        return find(options.cities, filters.city);
       case "district":
         return find(options.districts, filters.district);
       case "neighborhood":
@@ -61,9 +91,9 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
       case "university":
         return options.universities.find((u) => u.value === filters.university)?.short ?? "";
       case "priceMin":
-        return t("chipPriceMin", { min: filters.priceMin ?? 0 });
+        return t("chipPriceMin", { min: formatMoney(filters.priceMin ?? 0, priceCurrency, locale) });
       case "priceMax":
-        return t("chipPriceMax", { max: filters.priceMax ?? 0 });
+        return t("chipPriceMax", { max: formatMoney(filters.priceMax ?? 0, priceCurrency, locale) });
       case "rooms":
         return filters.rooms === 4 ? `${t("rooms4")} ${t("rooms").toLocaleLowerCase(locale)}` : t("chipRooms", { count: filters.rooms ?? 0 });
       case "spaces":
@@ -93,13 +123,14 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
     <div className="shell pt-10 pb-4 lg:pt-16">
       <header className="mb-8 flex flex-col gap-5 lg:mb-12 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-6">
-          <h1 className="t-display">{segment === "students" ? t("studentsHeading") : t("familyHeading")}</h1>
+          <h1 className="t-display">{heading ?? (segment === "students" ? t("studentsHeading") : t("familyHeading"))}</h1>
           <p className="text-[0.9375rem] text-ink-2" aria-live="polite" id="results-h">
             {t("results", { count: result.total })}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <SaveSearchButton kind="LISTINGS" query={query} loggedIn={Boolean(user)} />
+          {/* Saved with the market so alerts stay in the country it was made in. */}
+          <SaveSearchButton kind="LISTINGS" query={listingFiltersToQuery({ ...scoped, page: 1 })} loggedIn={Boolean(user)} />
           <SearchToolbar
             sort={filters.sort}
             view={filters.view}
@@ -121,16 +152,20 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
             segment={segment}
             filters={filters}
             categories={SEGMENTS[segment]}
+            countries={countries}
+            country={market.code}
+            priceCurrency={priceCurrency}
+            cities={options.cities}
             districts={options.districts}
             neighborhoods={options.neighborhoods}
             metros={options.metros}
-            universities={options.universities.map((u) => ({ value: u.value, label: u.label }))}
+            universities={options.universities.map((u) => ({ value: u.value, label: u.label, cityValue: u.cityValue }))}
             showStudentFilters={segment === "students"}
           />
         </aside>
 
         <section aria-labelledby="results-h" className="min-w-0">
-          <p className="mb-5 hint">{segment === "students" ? t("studentsLead") : t("familyLead")}</p>
+          {intro ?? <p className="mb-5 hint">{segment === "students" ? t("studentsLead") : t("familyLead")}</p>}
           {featured.length > 0 && active.length === 0 && (
             <div className="mb-8">
               <h2 className="mb-3 text-sm font-semibold text-ink-2">{t("featuredTitle")}</h2>
@@ -166,7 +201,8 @@ export async function ListingSearchPage({ locale, segment, filters }: { locale: 
             <div className="mb-8">
               <ResultsMap
                 center={map.center}
-                points={map.points.map((p) => ({ id: p.id, href: `/${locale}/listings/${p.id}`, title: p.title, price: formatAzn(p.monthlyRent, locale), image: p.image, position: p.position }))}
+                fallback={mapFallback}
+                points={map.points.map((p) => ({ id: p.id, href: `/${locale}/listings/${p.id}`, title: p.title, price: displayPriceText(p.monthlyRent, p.currency, money, locale), image: p.image, position: p.position }))}
                 labels={{ open: t("mapOpen"), university: options.universities.find((u) => u.value === filters.university)?.short ?? "" }}
               />
               <p className="mt-3 hint">

@@ -25,8 +25,10 @@ import { getCurrentUser } from "@/server/auth/current";
 import { getListingDetail, pickTranslation, similarListings, nearbyListings, universitiesNear } from "@/server/listings/queries";
 import { savedIdsFor } from "@/server/engagement";
 import { nameOf } from "@/lib/i18n-data";
-import { formatAzn, formatDate } from "@/lib/format";
-import { alternatesFor, siteUrl } from "@/lib/seo";
+import { formatDate } from "@/lib/format";
+import { displayPrice, displayPriceText, formatMoney } from "@/lib/money";
+import { getMoneyView } from "@/server/money";
+import { alternatesFor, openGraphFor, siteUrl } from "@/lib/seo";
 import { SHARED_CATEGORIES } from "@/lib/domain";
 import { universityNearness } from "@/lib/baku-geo";
 import { Gallery } from "@/components/listings/gallery";
@@ -54,7 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tr = pickTranslation(listing.translations, locale);
   const [t, cat] = await Promise.all([getTranslations({ locale, namespace: "meta" }), getTranslations({ locale, namespace: "categories" })]);
   const area = [listing.neighborhood ? nameOf(listing.neighborhood, locale) : null, nameOf(listing.district, locale)].filter(Boolean).join(", ");
-  const description = tr?.description.slice(0, 155) ?? t("listingFallbackDescription", { category: cat(listing.category), area, price: formatAzn(listing.monthlyRent, locale) });
+  const description = tr?.description.slice(0, 155) ?? t("listingFallbackDescription", { category: cat(listing.category), area, price: formatMoney(listing.monthlyRent, listing.currency, locale) });
   const available = listing.translations.map((x) => x.locale as AppLocale);
   // A locale without its own text is a UI-only variant: canonical points to the original language.
   const canonicalLocale = available.includes(locale) ? locale : (listing.originalLocale as AppLocale);
@@ -63,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     alternates: alternatesFor(canonicalLocale, `/listings/${id}`, available),
     robots: data.isPublic ? undefined : { index: false, follow: false },
-    openGraph: { title: tr?.title, description, type: "article", images: listing.images[0] ? [listing.images[0].url] : undefined },
+    openGraph: openGraphFor(locale, { title: tr?.title, description, type: "article", ...(listing.images[0] ? { images: [listing.images[0].url] } : {}) }),
   };
 }
 
@@ -87,7 +89,7 @@ export default async function ListingPage({ params }: Props) {
   const { listing: l, isPublic, canManage } = data;
   const uniNear = l.university ? universityNearness(l, l.university) : null;
 
-  const [t, c, e, cat, contactT, langs, nav] = await Promise.all([
+  const [t, c, e, cat, contactT, langs, nav, cur, money] = await Promise.all([
     getTranslations({ locale, namespace: "listing" }),
     getTranslations({ locale, namespace: "common" }),
     getTranslations({ locale, namespace: "enums" }),
@@ -95,7 +97,13 @@ export default async function ListingPage({ params }: Props) {
     getTranslations({ locale, namespace: "contact" }),
     getTranslations({ locale, namespace: "common.languages" }),
     getTranslations({ locale, namespace: "nav" }),
+    getTranslations({ locale, namespace: "currency" }),
+    getMoneyView(),
   ]);
+  // The listing's own price is the real one; a conversion to the visitor's currency is marked approximate.
+  const price = displayPrice(l.monthlyRent, l.currency, money, locale);
+  const listingMoney = (amount: number) => formatMoney(amount, l.currency, locale);
+  const nearbyPrice = (p: { monthlyRent: number; currency: string }) => displayPriceText(p.monthlyRent, p.currency, money, locale);
   const tr = pickTranslation(l.translations, locale)!;
   const shared = SHARED_CATEGORIES.includes(l.category);
   const [similar, saved, nearby, nearUnis] = await Promise.all([
@@ -145,7 +153,7 @@ export default async function ListingPage({ params }: Props) {
     { label: t("heating"), value: e(`heating.${l.heating}`) },
     { label: t("airConditioning"), value: l.airConditioning ? c("yes") : c("no") },
     ...(shared ? [{ label: t("gender"), value: e(`gender.${l.genderPreference}`) }] : []),
-    { label: t("deposit"), value: l.deposit == null ? t("depositUnknown") : l.deposit === 0 ? t("noDeposit") : formatAzn(l.deposit, locale) },
+    { label: t("deposit"), value: l.deposit == null ? t("depositUnknown") : l.deposit === 0 ? t("noDeposit") : listingMoney(l.deposit) },
     {
       label: t("commission"),
       value:
@@ -153,7 +161,7 @@ export default async function ListingPage({ params }: Props) {
           ? c("noCommission")
           : l.commissionType === "PERCENT"
             ? t("commissionPercent", { value: l.commissionValue ?? 0 })
-            : t("commissionFixed", { value: l.commissionValue ?? 0 }),
+            : t("commissionFixed", { value: listingMoney(l.commissionValue ?? 0) }),
     },
   ];
 
@@ -167,8 +175,13 @@ export default async function ListingPage({ params }: Props) {
         image: l.images.map((i) => (i.url.startsWith("http") ? i.url : `${siteUrl()}${i.url}`)),
         numberOfRooms: l.rooms ?? undefined,
         floorSize: l.areaSqm ? { "@type": "QuantitativeValue", value: l.areaSqm, unitCode: "MTK" } : undefined,
-        address: { "@type": "PostalAddress", addressLocality: "Bakı", addressRegion: nameOf(l.district, "az"), addressCountry: "AZ" },
-        offers: { "@type": "Offer", price: l.monthlyRent, priceCurrency: "AZN", availability: "https://schema.org/InStock" },
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: nameOf(l.district.city, locale),
+          addressRegion: nameOf(l.district, locale),
+          addressCountry: l.district.city.country.code.toUpperCase(),
+        },
+        offers: { "@type": "Offer", price: l.monthlyRent, priceCurrency: l.currency, availability: "https://schema.org/InStock" },
       }
     : null;
 
@@ -226,11 +239,26 @@ export default async function ListingPage({ params }: Props) {
               {tr.title}
             </h1>
           </div>
-          <p className="shrink-0 md:text-right">
-            <span className="t-price text-[2rem] leading-none sm:text-[2.5rem]">{formatAzn(l.monthlyRent, locale)}</span>
-            <span className="text-lg text-ink-2">{c("perMonth")}</span>
-            <span className="block text-sm text-ink-2">{l.pricePerPlace ? c("perPlace") : c("wholeUnit")}</span>
-          </p>
+          <div className="shrink-0 md:max-w-xs md:text-right">
+            <p>
+              {price.approximate && (
+                <span className="t-price text-[2rem] leading-none sm:text-[2.5rem]" aria-label={cur("approx")}>
+                  ≈{" "}
+                </span>
+              )}
+              <span className="t-price text-[2rem] leading-none sm:text-[2.5rem]">{price.main}</span>
+              <span className="text-lg text-ink-2">{c("perMonth")}</span>
+              <span className="block text-sm text-ink-2">{l.pricePerPlace ? c("perPlace") : c("wholeUnit")}</span>
+            </p>
+            {price.approximate && (
+              <>
+                <p className="mt-2 text-[0.9375rem] font-semibold">{cur("original", { price: price.original })}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-2">
+                  {cur("detailNote", { date: money.ratesUpdatedAt ? formatDate(money.ratesUpdatedAt, locale) : "—" })}
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-6 py-6 md:flex-row md:items-center md:justify-between">
@@ -416,7 +444,7 @@ export default async function ListingPage({ params }: Props) {
                   id: p.id,
                   href: `/${locale}/listings/${p.id}`,
                   title: p.title,
-                  price: formatAzn(p.monthlyRent, locale),
+                  price: nearbyPrice(p),
                   image: p.image,
                   position: p.position,
                 }))}
@@ -429,7 +457,7 @@ export default async function ListingPage({ params }: Props) {
                       <Link href={`/listings/${p.id}`} className="flex items-baseline justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-mist">
                         <span className="truncate">{p.title}</span>
                         <span className="shrink-0 text-sm text-ink-2">
-                          {formatAzn(p.monthlyRent, locale)} · {t("nearbyKm", { km: p.distanceKm < 0.1 ? "<0.1" : p.distanceKm.toFixed(1) })}
+                          {nearbyPrice(p)} · {t("nearbyKm", { km: p.distanceKm < 0.1 ? "<0.1" : p.distanceKm.toFixed(1) })}
                         </span>
                       </Link>
                     </li>

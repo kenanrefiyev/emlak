@@ -55,11 +55,13 @@ describe("localisation", () => {
 
   it("switching language keeps the page and its filters, and the choice is remembered", async () => {
     const { p, ctx } = await page();
-    await p.goto(`${BASE}/az/students?district=yasamal&max=300`);
+    await p.goto(`${BASE}/az/evler?district=yasamal&max=300`);
     // The switcher is a client component: wait until React has hydrated it.
-    await p.waitForFunction(() => Object.keys(document.querySelector("header select") ?? {}).some((k) => k.startsWith("__react")));
-    await p.locator("header select").first().selectOption("en");
-    await p.waitForURL(/\/en\/students/);
+    const trigger = 'header button[aria-label^="Dil:"]';
+    await p.waitForFunction((sel) => Object.keys(document.querySelector(sel) ?? {}).some((k) => k.startsWith("__react")), trigger);
+    await p.locator(trigger).first().click();
+    await p.locator('header li button[lang="en"]').first().click();
+    await p.waitForURL(/\/en\/housing/);
     const url = new URL(p.url());
     assert.equal(url.searchParams.get("district"), "yasamal");
     assert.equal(url.searchParams.get("max"), "300");
@@ -69,11 +71,17 @@ describe("localisation", () => {
     await ctx.close();
   });
 
+  it("old route URLs permanently redirect to the localized ones, keeping filters", async () => {
+    const res = await fetch(`${BASE}/az/students?district=yasamal`, { redirect: "manual" });
+    assert.equal(res.status, 308);
+    assert.match(res.headers.get("location") ?? "", /\/az\/evler\?district=yasamal$/);
+  });
+
   it("prices are identical across languages", async () => {
     const { p, ctx } = await page();
     const prices = {};
     for (const l of ["az", "en", "ru"]) {
-      await p.goto(`${BASE}/${l}/students?sort=price_asc`);
+      await p.goto(`${BASE}/${l}/${l === "az" ? "evler" : "housing"}?sort=price_asc`);
       prices[l] = (await p.locator("article .t-price").first().innerText()).replace(/\D/g, "");
     }
     assert.equal(prices.az, prices.en);
@@ -115,23 +123,23 @@ describe("access control", () => {
 
 describe("SEO", () => {
   it("publishes hreflang alternates and a canonical", async () => {
-    const html = await (await fetch(`${BASE}/ru/students`)).text();
+    const html = await (await fetch(`${BASE}/ru/housing`)).text();
     for (const l of ["az", "tr", "ru", "en", "x-default"]) assert.match(html, new RegExp(`hreflang="${l}"`, "i"));
-    assert.match(html, /rel="canonical" href="[^"]*\/ru\/students"/);
+    assert.match(html, /rel="canonical" href="[^"]*\/ru\/housing"/);
   });
 
   it("serves robots.txt and a localised sitemap without private pages", async () => {
     const robots = await (await fetch(`${BASE}/robots.txt`)).text();
     assert.match(robots, /Disallow: \/admin/);
     const sitemap = await (await fetch(`${BASE}/sitemap.xml`)).text();
-    assert.match(sitemap, /\/tr\/students/);
+    assert.match(sitemap, /\/tr\/evler/);
     assert.match(sitemap, /\/az\/listings\//);
     assert.doesNotMatch(sitemap, /\/account|\/admin|\/agent\b/);
   });
 });
 
 describe("responsive layout", () => {
-  for (const path of ["/az", "/az/students", "/ru/roommates", "/en/areas", "/tr/login"]) {
+  for (const path of ["/az", "/az/evler", "/ru/roommates", "/en/areas", "/tr/login"]) {
     it(`has no horizontal overflow at 375px: ${path}`, async () => {
       const { p, ctx } = await page({ width: 375 });
       await p.goto(`${BASE}${path}`);
@@ -147,7 +155,7 @@ describe("responsive layout", () => {
     await p.getByRole("button", { name: "Menyu" }).click();
     const dialog = p.locator("dialog[open]");
     await dialog.getByRole("link", { name: "Ev yoldaşı tap" }).click();
-    await p.waitForURL(/\/az\/roommates/);
+    await p.waitForURL(/\/az\/ev-yoldasi/);
     await ctx.close();
   });
 });

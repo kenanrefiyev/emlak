@@ -147,7 +147,7 @@ describe("validation", () => {
   it("validates both roommate scenarios", () => {
     const common = { title: "Ev yoldaşı axtarıram Yasamalda", description: "BDU tələbəsiyəm, sakit və səliqəli ev yoldaşı axtarıram.", moveInDate: "2026-11-01", durationMonths: "9", smoking: "NO_SMOKING", cleaning: "ROTA", sleepSchedule: "EARLY", guests: "RARELY" };
     const a = roommateInputSchema.safeParse({ ...common, type: "HAS_PLACE" });
-    expect(a.error?.issues.map((i) => i.path[0])).toEqual(expect.arrayContaining(["monthlyContribution", "districtId", "accommodationType"]));
+    expect(a.error?.issues.map((i) => i.path[0])).toEqual(expect.arrayContaining(["cityId", "monthlyContribution", "districtId", "accommodationType"]));
     const b = roommateInputSchema.safeParse({ ...common, type: "SEEKING_PARTNER", budgetMin: "300", budgetMax: "200", groupSize: "1", preferredDistrictIds: ["d"] });
     expect(b.error?.issues.map((i) => i.message)).toContain("budgetRange");
   });

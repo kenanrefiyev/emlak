@@ -4,7 +4,9 @@ import { ServiceError } from "@/server/errors";
 import { audit } from "@/server/audit";
 import { getSettings } from "@/server/settings";
 import { roommateInputSchema, normalizeRoommateInput, type RoommateInput } from "@/lib/validation/roommate";
-import { fieldErrorsOf } from "@/lib/validation/helpers";
+import { fieldErrorsOf, V } from "@/lib/validation/helpers";
+import { PRICE_MAX, PRICE_MIN } from "@/lib/domain";
+import { amountScale } from "@/lib/money";
 import type { Actor } from "@/server/listings/service";
 
 const MAX_ACTIVE_ADS = 3;
@@ -22,21 +24,37 @@ async function loadOwned(actor: Actor, id: string) {
   return ad;
 }
 
-async function assertReferences(v: ReturnType<typeof normalizeRoommateInput>, preferred: string[]) {
+/**
+ * Checks the ad's city (an active market's) and that every referenced place
+ * exists and lies in that city, then checks the amounts against the currency
+ * they are in — the city's country's — which it returns.
+ */
+async function assertReferences(v: ReturnType<typeof normalizeRoommateInput>, preferred: string[]): Promise<string> {
   const errors: Record<string, string> = {};
-  const [district, neighborhood, metro, university, prefCount] = await Promise.all([
-    v.districtId ? db.district.findUnique({ where: { id: v.districtId }, select: { id: true } }) : null,
+  const [city, district, neighborhood, metro, university, prefs] = await Promise.all([
+    db.city.findFirst({ where: { id: v.cityId, country: { isActive: true } }, select: { country: { select: { currency: true } } } }),
+    v.districtId ? db.district.findUnique({ where: { id: v.districtId }, select: { cityId: true } }) : null,
     v.neighborhoodId ? db.neighborhood.findUnique({ where: { id: v.neighborhoodId }, select: { districtId: true } }) : null,
-    v.metroStationId ? db.metroStation.findUnique({ where: { id: v.metroStationId }, select: { id: true } }) : null,
-    v.universityId ? db.university.findUnique({ where: { id: v.universityId }, select: { id: true } }) : null,
-    preferred.length ? db.district.count({ where: { id: { in: preferred } } }) : 0,
+    v.metroStationId ? db.metroStation.findUnique({ where: { id: v.metroStationId }, select: { cityId: true } }) : null,
+    v.universityId ? db.university.findUnique({ where: { id: v.universityId }, select: { cityId: true } }) : null,
+    preferred.length ? db.district.findMany({ where: { id: { in: preferred } }, select: { cityId: true } }) : [],
   ]);
-  if (v.districtId && !district) errors.districtId = "choice";
+  if (!city) errors.cityId = "choice";
+  if (v.districtId && district?.cityId !== v.cityId) errors.districtId = "choice";
   if (v.neighborhoodId && (!neighborhood || neighborhood.districtId !== v.districtId)) errors.neighborhoodId = "choice";
-  if (v.metroStationId && !metro) errors.metroStationId = "choice";
-  if (v.universityId && !university) errors.universityId = "choice";
-  if (prefCount !== preferred.length) errors.preferredDistrictIds = "choice";
+  if (v.metroStationId && metro?.cityId !== v.cityId) errors.metroStationId = "choice";
+  if (v.universityId && university?.cityId !== v.cityId) errors.universityId = "choice";
+  if (prefs.length !== preferred.length || prefs.some((p) => p.cityId !== v.cityId)) errors.preferredDistrictIds = "choice";
+  const currency = city?.country.currency ?? "AZN";
+  const scale = amountScale(currency);
+  for (const field of ["monthlyContribution", "budgetMin", "budgetMax"] as const) {
+    const amount = v[field];
+    if (amount == null) continue;
+    if (amount < PRICE_MIN * scale) errors[field] = V.min;
+    else if (amount > PRICE_MAX * scale) errors[field] = V.max;
+  }
   if (Object.keys(errors).length) throw new ServiceError("validation", errors);
+  return currency;
 }
 
 /**
@@ -61,13 +79,14 @@ async function assertNotDuplicate(actor: Actor, input: RoommateInput, excludeId?
 export async function createRoommateAd(actor: Actor, input: RoommateInput) {
   const data = normalizeRoommateInput(input);
   const preferred = input.type === "SEEKING_PARTNER" ? [...new Set(input.preferredDistrictIds)] : [];
-  await assertReferences(data, preferred);
+  const currency = await assertReferences(data, preferred);
   await assertNotDuplicate(actor, input);
   const active = await db.roommateAd.count({ where: { ownerId: actor.id, status: { in: ["PENDING_REVIEW", "PUBLISHED"] } } });
   if (active >= MAX_ACTIVE_ADS) throw new ServiceError("quota");
   return db.roommateAd.create({
     data: {
       ...data,
+      currency,
       ownerId: actor.id,
       status: "PENDING_REVIEW",
       submittedAt: new Date(),
@@ -82,13 +101,13 @@ export async function updateRoommateAd(actor: Actor, id: string, input: Roommate
   if (current.status === "CLOSED" || current.status === "ARCHIVED") throw new ServiceError("bad_status");
   const data = normalizeRoommateInput(input);
   const preferred = input.type === "SEEKING_PARTNER" ? [...new Set(input.preferredDistrictIds)] : [];
-  await assertReferences(data, preferred);
+  const currency = await assertReferences(data, preferred);
   await assertNotDuplicate(actor, input, id);
   const requeue = actor.role !== "ADMIN";
   await db.$transaction(async (tx) => {
     await tx.roommateAd.update({
       where: { id },
-      data: { ...data, ...(requeue ? { status: "PENDING_REVIEW", submittedAt: new Date(), rejectionReason: null } : {}) },
+      data: { ...data, currency, ...(requeue ? { status: "PENDING_REVIEW", submittedAt: new Date(), rejectionReason: null } : {}) },
     });
     await tx.roommateAdDistrict.deleteMany({ where: { roommateAdId: id } });
     if (preferred.length) await tx.roommateAdDistrict.createMany({ data: preferred.map((districtId) => ({ roommateAdId: id, districtId })) });

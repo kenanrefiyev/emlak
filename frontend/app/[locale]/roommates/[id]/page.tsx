@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { toPublicPath } from "@/i18n/paths";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CalendarDays, Check, Info, MapPin } from "lucide-react";
@@ -8,7 +9,9 @@ import { getCurrentUser } from "@/server/auth/current";
 import { getRoommateDetail, viewerReferenceAd } from "@/server/roommates/queries";
 import { matchAds } from "@/lib/matching";
 import { nameOf } from "@/lib/i18n-data";
-import { formatAzn, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { displayPrice, displayRangeText, formatMoney } from "@/lib/money";
+import { getMoneyView } from "@/server/money";
 import { alternatesFor } from "@/lib/seo";
 import { isRoommateSaved } from "@/server/engagement";
 import { ContactPanel } from "@/components/listings/contact-panel";
@@ -38,13 +41,14 @@ export default async function RoommateDetailPage({ params }: Props) {
   const data = await getRoommateDetail(id, user);
   if (!data) notFound();
   const { ad, isPublic, canManage } = data;
-  const [t, c, e, cat, langs, contactT] = await Promise.all([
+  const [t, c, e, cat, langs, contactT, money] = await Promise.all([
     getTranslations({ locale, namespace: "roommates" }),
     getTranslations({ locale, namespace: "common" }),
     getTranslations({ locale, namespace: "enums" }),
     getTranslations({ locale, namespace: "categories" }),
     getTranslations({ locale, namespace: "common.languages" }),
     getTranslations({ locale, namespace: "contact" }),
+    getMoneyView(),
   ]);
   const isOwner = user?.id === ad.ownerId;
   const hasPlace = ad.type === "HAS_PLACE";
@@ -75,14 +79,24 @@ export default async function RoommateDetailPage({ params }: Props) {
   const showProfile = ad.showProfile || canManage;
   const status = ad.status === "PUBLISHED" && ad.expiresAt && ad.expiresAt <= new Date() ? "EXPIRED" : ad.status;
 
+  // Converted amounts are approximate and keep the ad's own figure in brackets.
+  const share = ad.monthlyContribution != null ? displayPrice(ad.monthlyContribution, ad.currency, money, locale) : null;
+  const shareText = share && `${share.approximate ? "≈ " : ""}${share.main} ${c("perMonth")}${share.approximate ? ` (${share.original})` : ""}`;
+  let budgetText: string | null = null;
+  if (ad.budgetMin != null && ad.budgetMax != null) {
+    const own = t("budgetRange", { min: ad.budgetMin, max: formatMoney(ad.budgetMax, ad.currency, locale) });
+    const shown = displayRangeText(ad.budgetMin, ad.budgetMax, ad.currency, money, locale);
+    budgetText = shown.startsWith("≈") ? `${shown} ${c("perMonth")} (${own})` : `${own} ${c("perMonth")}`;
+  }
   const rows = [
-    hasPlace && ad.monthlyContribution != null ? { label: t("contribution"), value: `${formatAzn(ad.monthlyContribution, locale)} ${c("perMonth")}` } : null,
-    !hasPlace && ad.budgetMin != null && ad.budgetMax != null ? { label: t("budget"), value: `${t("budgetRange", { min: ad.budgetMin, max: ad.budgetMax })} ${c("perMonth")}` } : null,
+    hasPlace && shareText ? { label: t("contribution"), value: shareText } : null,
+    !hasPlace && budgetText ? { label: t("budget"), value: budgetText } : null,
     hasPlace && ad.accommodationType ? { label: t("homeType"), value: cat(ad.accommodationType) } : null,
     !hasPlace && ad.desiredPropertyType ? { label: t("desiredHome"), value: cat(ad.desiredPropertyType) } : null,
     hasPlace && ad.currentResidents != null ? { label: t("currentResidents"), value: c("people", { count: ad.currentResidents }) } : null,
     hasPlace && ad.availableSpaces != null ? { label: t("availableSpaces"), value: c("places", { count: ad.availableSpaces }) } : null,
     !hasPlace && ad.groupSize != null ? { label: t("groupSize"), value: c("people", { count: ad.groupSize }) } : null,
+    ad.city ? { label: t("city"), value: nameOf(ad.city, locale) } : null,
     { label: t("moveIn"), value: formatDate(ad.moveInDate, locale) },
     { label: t("duration"), value: c("months", { count: ad.durationMonths }) },
     ad.university ? { label: t("university"), value: `${ad.university.shortName} — ${nameOf(ad.university, locale)}` } : null,
@@ -248,7 +262,7 @@ export default async function RoommateDetailPage({ params }: Props) {
                 <ContactPanel target={{ roommateAdId: ad.id }} canPhone={false} placeholder={contactT("messagePlaceholder")} />
               </>
             ) : (
-              <Link href={`/login?next=${encodeURIComponent(`/${locale}/roommates/${ad.id}`)}`} className="btn btn-primary w-full">
+              <Link href={`/login?next=${encodeURIComponent(`/${locale}${toPublicPath(`/roommates/${ad.id}`, locale)}`)}`} className="btn btn-primary w-full">
                 {t("loginToContact")}
               </Link>
             )}

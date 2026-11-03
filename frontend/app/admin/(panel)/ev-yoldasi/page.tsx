@@ -1,3 +1,4 @@
+import { currencySymbol } from "@/lib/money";
 import { requireAdmin } from "@/server/auth/current";
 import { db } from "@/server/db";
 import { AdminPage, Panel, StatusPill, Table, Tabs, fmtDate } from "@/components/admin/ui";
@@ -49,7 +50,7 @@ export default async function AdminRoommates({ searchParams }: { searchParams: P
                   {r.title}
                 </a>
                 <p className="text-ink-2">
-                  {r.type === "HAS_PLACE" ? `Yer var · ${r.district?.nameAz ?? "—"} · ${r.monthlyContribution} ₼` : `Birgə kirayə · ${r.preferredDistricts.map((p) => p.district.nameAz).join(", ")} · ${r.budgetMin}–${r.budgetMax} ₼`}
+                  {r.type === "HAS_PLACE" ? `Yer var · ${r.district?.nameAz ?? "—"} · ${r.monthlyContribution} ${currencySymbol(r.currency)}` : `Birgə kirayə · ${r.preferredDistricts.map((p) => p.district.nameAz).join(", ")} · ${r.budgetMin}–${r.budgetMax} ${currencySymbol(r.currency)}`}
                 </p>
                 <p className="mt-1 line-clamp-3 text-xs text-ink-3">{r.description}</p>
                 {r._count.reports > 0 && <span className="tag mt-1 bg-danger-soft text-danger">{r._count.reports} şikayət</span>}

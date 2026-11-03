@@ -4,7 +4,8 @@ import { BadgeCheck, BedDouble, MapPin, Ruler, Users } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import type { ListingCardData } from "@/server/listings/queries";
-import { formatAzn } from "@/lib/format";
+import { displayPrice } from "@/lib/money";
+import { getMoneyView } from "@/server/money";
 import { SHARED_CATEGORIES } from "@/lib/domain";
 import { SaveButton } from "./save-button";
 
@@ -28,12 +29,17 @@ export async function ListingCard({
   layout?: "grid" | "list";
   priority?: boolean;
 }) {
-  const [c, cat, card, e] = await Promise.all([
+  const [c, cat, card, e, cur, money] = await Promise.all([
     getTranslations({ locale, namespace: "common" }),
     getTranslations({ locale, namespace: "categories" }),
     getTranslations({ locale, namespace: "card" }),
     getTranslations({ locale, namespace: "enums" }),
+    getTranslations({ locale, namespace: "currency" }),
+    getMoneyView(),
   ]);
+  // Shown in the visitor's display currency; a conversion is marked "≈" and keeps the listing's own price beside it.
+  const price = displayPrice(l.monthlyRent, l.currency, money, locale);
+  const total = displayPrice(l.monthlyTotal.value, l.currency, money, locale);
   const shared = SHARED_CATEGORIES.includes(l.category);
   const list = layout === "list";
   const where = [l.metro ? `${l.metro.name} m.` : l.neighborhood, l.district].filter(Boolean).join(", ");
@@ -115,13 +121,15 @@ export async function ListingCard({
             )}
           </span>
           <span className="shrink-0 text-right">
-            <span className="t-price block text-lg leading-tight">
-              {formatAzn(l.monthlyRent, locale)}
+            <span className="t-price block text-lg leading-tight" title={price.approximate ? cur("approx") : undefined}>
+              {price.approximate && <span aria-label={cur("approx")}>≈ </span>}
+              {price.main}
               <span className="text-sm font-normal text-ink-2">{c("perMonth")}</span>
             </span>
+            {price.approximate && <span className="block text-xs text-ink-2">{cur("original", { price: price.original })}</span>}
             <span className="block text-xs text-ink-2">{l.pricePerPlace ? c("perPlace") : c("wholeUnit")}</span>
             {l.monthlyTotal.complete && l.monthlyTotal.value > l.monthlyRent ? (
-              <span className="block text-xs font-medium text-ink">{card("totalWithCosts", { total: formatAzn(l.monthlyTotal.value, locale) })}</span>
+              <span className="block text-xs font-medium text-ink">{card("totalWithCosts", { total: `${total.approximate ? "≈ " : ""}${total.main}` })}</span>
             ) : l.utilities === "INCLUDED" ? (
               <span className="block text-xs font-medium text-ok">{card("utilitiesIncluded")}</span>
             ) : null}

@@ -62,26 +62,30 @@ async function assertQuota(actor: Actor, excludeId?: string) {
 
 /**
  * Only real ids from the reference tables are accepted; a neighborhood must
- * belong to the district, and a tagged university must really be nearby.
+ * belong to the district, the metro station and university must be in the
+ * district's city, and a tagged university must really be nearby.
  */
 const place = { slug: true, latitude: true, longitude: true } as const;
 
 async function assertReferences(v: ReturnType<typeof normalizeListingInput>, amenityIds: string[]) {
-  const [district, neighborhood, metro, university, amenities] = await Promise.all([
-    db.district.findUnique({ where: { id: v.districtId }, select: { id: true } }),
+  const [district, neighborhood, metro, university, amenities, currency] = await Promise.all([
+    db.district.findUnique({ where: { id: v.districtId }, select: { id: true, cityId: true } }),
     v.neighborhoodId ? db.neighborhood.findUnique({ where: { id: v.neighborhoodId }, select: { districtId: true, ...place } }) : null,
-    v.metroStationId ? db.metroStation.findUnique({ where: { id: v.metroStationId }, select: place }) : null,
-    v.universityId ? db.university.findUnique({ where: { id: v.universityId }, select: { districtId: true, ...place } }) : null,
+    v.metroStationId ? db.metroStation.findUnique({ where: { id: v.metroStationId }, select: { cityId: true, ...place } }) : null,
+    v.universityId ? db.university.findUnique({ where: { id: v.universityId }, select: { districtId: true, cityId: true, ...place } }) : null,
     amenityIds.length ? db.amenity.count({ where: { id: { in: amenityIds } } }) : 0,
+    // Listings may be priced in the currency of any active market.
+    db.country.findFirst({ where: { isActive: true, currency: v.currency }, select: { id: true } }),
   ]);
   const errors: Record<string, string> = {};
   if (!district) errors.districtId = "choice";
   if (v.neighborhoodId && (!neighborhood || neighborhood.districtId !== v.districtId)) errors.neighborhoodId = "choice";
-  if (v.metroStationId && !metro) errors.metroStationId = "choice";
-  if (v.universityId && !university) errors.universityId = "choice";
+  if (v.metroStationId && (!metro || (district && metro.cityId !== district.cityId))) errors.metroStationId = "choice";
+  if (v.universityId && (!university || (district && university.cityId !== district.cityId))) errors.universityId = "choice";
   else if (university && !errors.neighborhoodId && !universityNearness({ districtId: v.districtId, metroStation: metro, neighborhood }, university))
     errors.universityId = "uniTooFar";
   if (amenities !== new Set(amenityIds).size) errors.amenityIds = "choice";
+  if (!currency) errors.currency = "choice";
   if (Object.keys(errors).length) throw new ServiceError("validation", errors);
 }
 

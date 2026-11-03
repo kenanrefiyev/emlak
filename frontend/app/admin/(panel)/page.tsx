@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck, Building2, Flag, Inbox, UsersRound, Wallet } from "lucide-react";
+import { formatMoney } from "@/lib/money";
 import { requireAdmin } from "@/server/auth/current";
 import { db } from "@/server/db";
 import { AdminPage, CATEGORY_AZ, Panel, fmtDate } from "@/components/admin/ui";
@@ -17,7 +18,7 @@ export default async function AdminDashboard() {
       where: { status: "PENDING_REVIEW" },
       orderBy: { submittedAt: "asc" },
       take: 6,
-      select: { id: true, category: true, monthlyRent: true, submittedAt: true, translations: { where: { isOriginal: true }, select: { title: true } }, owner: { select: { name: true } } },
+      select: { id: true, category: true, currency: true, monthlyRent: true, submittedAt: true, translations: { where: { isOriginal: true }, select: { title: true } }, owner: { select: { name: true } } },
     }),
   ]);
   const tiles = [
@@ -57,7 +58,7 @@ export default async function AdminDashboard() {
                     {l.translations[0]?.title}
                   </Link>
                   <span className="block text-sm text-ink-2">
-                    {CATEGORY_AZ[l.category]} · {l.monthlyRent} ₼ · {l.owner.name}
+                    {CATEGORY_AZ[l.category]} · {formatMoney(l.monthlyRent, l.currency, "az")} · {l.owner.name}
                   </span>
                 </span>
                 <span className="text-sm text-ink-2">{fmtDate(l.submittedAt)}</span>

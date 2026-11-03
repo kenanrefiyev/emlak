@@ -56,16 +56,41 @@ const slugField = z
   .max(60);
 const coord = (min: number, max: number) =>
   z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().min(min).max(max).optional());
+const lat = coord(-90, 90);
+const lng = coord(-180, 180);
+const requiredId = z.string().min(1, { error: "required" });
+const countryCode = z.string().trim().toLowerCase().regex(/^[a-z]{2}$/, { error: "slug" });
+const currencyCode = z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, { error: "choice" });
 
 const schemas = {
-  district: z.object({ slug: slugField, ...names, sortOrder: optionalInt(0, 999) }),
-  neighborhood: z.object({ slug: slugField, ...names, districtId: z.string().min(1, { error: "required" }), isPopular: checkbox, latitude: coord(39, 42), longitude: coord(48, 51) }),
-  metro: z.object({ slug: slugField, ...names, line: z.enum(["RED", "GREEN", "PURPLE"]), districtId: optionalId, latitude: coord(39, 42), longitude: coord(48, 51) }),
-  university: z.object({ slug: slugField, ...names, shortName: requiredText(1, 20), districtId: optionalId, nearestMetroId: optionalId, latitude: coord(39, 42), longitude: coord(48, 51) }),
+  country: z.object({ code: countryCode, ...names, currency: currencyCode, isActive: checkbox, sortOrder: optionalInt(0, 999), latitude: lat, longitude: lng }),
+  city: z.object({ slug: slugField, ...names, countryId: requiredId, isPopular: checkbox, sortOrder: optionalInt(0, 999), latitude: lat, longitude: lng }),
+  district: z.object({ slug: slugField, ...names, cityId: requiredId, sortOrder: optionalInt(0, 999) }),
+  neighborhood: z.object({ slug: slugField, ...names, districtId: requiredId, isPopular: checkbox, latitude: lat, longitude: lng }),
+  metro: z.object({ slug: slugField, ...names, line: z.enum(["RED", "GREEN", "PURPLE"]), cityId: requiredId, districtId: optionalId, latitude: lat, longitude: lng }),
+  university: z.object({ slug: slugField, ...names, shortName: requiredText(1, 20), cityId: requiredId, districtId: optionalId, nearestMetroId: optionalId, latitude: lat, longitude: lng }),
   amenity: z.object({ ...names, key: z.string().regex(/^[a-z_]{2,40}$/, { error: "slug" }), icon: z.string().regex(/^[a-z-]{2,40}$/), sortOrder: optionalInt(0, 999) }),
 } as const;
 
 export type LocationKind = keyof typeof schemas;
+
+/** City and district choices for admin selects, labelled with their parent ("Kadıköy — İstanbul"). */
+export async function adminPlaceOptions() {
+  const [cities, districts] = await Promise.all([
+    db.city.findMany({
+      orderBy: [{ country: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+      select: { id: true, nameAz: true, country: { select: { nameAz: true } } },
+    }),
+    db.district.findMany({
+      orderBy: [{ city: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+      select: { id: true, nameAz: true, city: { select: { nameAz: true } } },
+    }),
+  ]);
+  return {
+    cities: cities.map((c) => ({ value: c.id, label: `${c.nameAz} — ${c.country.nameAz}` })),
+    districts: districts.map((d) => ({ value: d.id, label: `${d.nameAz} — ${d.city.nameAz}` })),
+  };
+}
 
 function parse<K extends LocationKind>(kind: K, raw: Record<string, unknown>): z.infer<(typeof schemas)[K]> {
   const parsed = schemas[kind].safeParse(raw);
@@ -81,6 +106,12 @@ export async function saveReference(admin: Actor, kind: LocationKind, id: string
   try {
     let savedId: string;
     switch (kind) {
+      case "country":
+        savedId = (id ? await db.country.update({ where: { id }, data: data as never }) : await db.country.create({ data: data as never })).id;
+        break;
+      case "city":
+        savedId = (id ? await db.city.update({ where: { id }, data: data as never }) : await db.city.create({ data: data as never })).id;
+        break;
       case "district":
         savedId = (id ? await db.district.update({ where: { id }, data: data as never }) : await db.district.create({ data: data as never })).id;
         break;
@@ -97,9 +128,10 @@ export async function saveReference(admin: Actor, kind: LocationKind, id: string
         savedId = (id ? await db.amenity.update({ where: { id }, data: data as never }) : await db.amenity.create({ data: data as never })).id;
         break;
     }
-    await audit(admin.id, `${kind}.${id ? "update" : "create"}`, kind, savedId, { slug: data.slug ?? data.key ?? null });
+    await audit(admin.id, `${kind}.${id ? "update" : "create"}`, kind, savedId, { slug: data.slug ?? data.key ?? data.code ?? null });
   } catch (err) {
-    if (err instanceof Error && "code" in err && (err as { code: string }).code === "P2002") throw new ServiceError("validation", { slug: "taken" });
+    if (err instanceof Error && "code" in err && (err as { code: string }).code === "P2002")
+      throw new ServiceError("validation", { [kind === "country" ? "code" : "slug"]: "taken" });
     throw err;
   }
 }
@@ -109,6 +141,21 @@ export async function deleteReference(admin: Actor, kind: LocationKind, id: stri
   assertAdmin(admin);
   try {
     switch (kind) {
+      case "country": {
+        if (await db.city.count({ where: { countryId: id } })) throw new ServiceError("in_use");
+        await db.country.delete({ where: { id } });
+        break;
+      }
+      case "city": {
+        const [districts, metros, unis] = await Promise.all([
+          db.district.count({ where: { cityId: id } }),
+          db.metroStation.count({ where: { cityId: id } }),
+          db.university.count({ where: { cityId: id } }),
+        ]);
+        if (districts || metros || unis) throw new ServiceError("in_use");
+        await db.city.delete({ where: { id } });
+        break;
+      }
       case "district": {
         const used = await db.listing.count({ where: { districtId: id } });
         const children = await db.neighborhood.count({ where: { districtId: id } });

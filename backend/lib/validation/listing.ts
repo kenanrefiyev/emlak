@@ -13,9 +13,18 @@ import {
   UTILITIES,
   WHOLE_UNIT_CATEGORIES,
 } from "@/lib/domain";
+import { MAX_AMOUNT_SCALE, amountScale } from "@/lib/money";
 import { checkbox, dateString, optionalId, optionalInt, optionalPhone, optionalText, requiredInt, requiredText, V } from "./helpers";
 
 const choice = <T extends readonly [string, ...string[]]>(values: T) => z.enum(values, { error: V.choice });
+
+/**
+ * Upper limits per money field, in manat-sized units. Fields accept up to the
+ * largest currency's range here; the listing's own currency narrows it in
+ * superRefine (see amountScale).
+ */
+const MONEY_MAX = { deposit: 50000, commissionValue: 50000, utilitiesCost: 5000, internetCost: 1000, otherCosts: 5000 } as const;
+const wide = (max: number) => optionalInt(0, max * MAX_AMOUNT_SCALE);
 
 /**
  * One schema for create and edit. Fields irrelevant to the chosen category are
@@ -30,15 +39,17 @@ export const listingInputSchema = z
     description: requiredText(40, 5000),
     paymentTerms: optionalText(500),
     originalLocale: z.enum(["az", "tr", "ru", "en"]).default("az"),
-    monthlyRent: requiredInt(PRICE_MIN, PRICE_MAX),
+    // ISO 4217; that it is a currency of an active market is checked by the service.
+    currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, { error: V.choice }).default("AZN"),
+    monthlyRent: requiredInt(PRICE_MIN, PRICE_MAX * MAX_AMOUNT_SCALE),
     pricePerPlace: checkbox,
-    deposit: optionalInt(0, 50000),
+    deposit: wide(MONEY_MAX.deposit),
     commissionType: choice(COMMISSION_TYPES).default("NONE"),
-    commissionValue: optionalInt(0, 50000),
+    commissionValue: wide(MONEY_MAX.commissionValue),
     // Monthly running costs for the whole home; empty = not stated, 0 = none.
-    utilitiesCost: optionalInt(0, 5000),
-    internetCost: optionalInt(0, 1000),
-    otherCosts: optionalInt(0, 5000),
+    utilitiesCost: wide(MONEY_MAX.utilitiesCost),
+    internetCost: wide(MONEY_MAX.internetCost),
+    otherCosts: wide(MONEY_MAX.otherCosts),
     otherCostsNote: optionalText(200),
     costSharers: optionalInt(1, 30),
     districtId: z.string({ error: V.required }).min(1, { error: V.required }),
@@ -77,6 +88,14 @@ export const listingInputSchema = z
     contactPreference: choice(CONTACT_PREFS).default("IN_APP"),
   })
   .superRefine((v, ctx) => {
+    const scale = amountScale(v.currency);
+    if (v.monthlyRent < PRICE_MIN * scale) ctx.addIssue({ code: "custom", path: ["monthlyRent"], message: V.min });
+    if (v.monthlyRent > PRICE_MAX * scale) ctx.addIssue({ code: "custom", path: ["monthlyRent"], message: V.max });
+    for (const [field, max] of Object.entries(MONEY_MAX) as [keyof typeof MONEY_MAX, number][]) {
+      // A percentage commission has its own 0–100 rule below.
+      if (field === "commissionValue" && v.commissionType === "PERCENT") continue;
+      if ((v[field] ?? 0) > max * scale) ctx.addIssue({ code: "custom", path: [field], message: V.max });
+    }
     const shared = SHARED_CATEGORIES.includes(v.category);
     const whole = WHOLE_UNIT_CATEGORIES.includes(v.category);
     if (whole && v.rooms === undefined) ctx.addIssue({ code: "custom", path: ["rooms"], message: V.required });
@@ -103,6 +122,7 @@ export function normalizeListingInput(v: ListingInput) {
     category: v.category,
     propertyType: v.propertyType,
     originalLocale: v.originalLocale,
+    currency: v.currency,
     monthlyRent: v.monthlyRent,
     pricePerPlace: v.category === "DORMITORY" || v.category === "PRIVATE_ROOM" ? true : shared ? v.pricePerPlace : false,
     deposit: v.deposit ?? null,

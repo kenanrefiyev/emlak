@@ -3,13 +3,15 @@
 import { useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Globe } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { localeNames, locales, type AppLocale } from "@/i18n/routing";
+import { localeFlags, localeNames, locales, type AppLocale } from "@/i18n/routing";
+import { Flag } from "./flag";
+import { Picker } from "./picker";
 
 /**
  * Switches language while keeping the current page and its query (filters).
  * next-intl's middleware stores the choice in the locale cookie on navigation.
+ * The visitor's market (country) is never touched.
  */
 export function LanguageSwitcher({ variant = "compact" }: { variant?: "compact" | "list" }) {
   const t = useTranslations("nav");
@@ -35,8 +37,10 @@ export function LanguageSwitcher({ variant = "compact" }: { variant?: "compact" 
             lang={l}
             onClick={() => change(l)}
             aria-pressed={l === locale}
-            className="btn btn-sm border-line !px-3 aria-pressed:border-brand aria-pressed:bg-brand aria-pressed:text-white"
+            disabled={pending}
+            className="btn btn-sm justify-start gap-2.5 border-line !px-3 aria-pressed:border-brand aria-pressed:bg-brand-soft aria-pressed:text-brand"
           >
+            <Flag code={localeFlags[l]} />
             {localeNames[l]}
           </button>
         ))}
@@ -45,22 +49,18 @@ export function LanguageSwitcher({ variant = "compact" }: { variant?: "compact" 
   }
 
   return (
-    <label className="relative inline-flex min-h-[3.25rem] items-center gap-1.5 rounded-full border border-line px-4 text-[0.9375rem] font-semibold text-ink focus-within:border-brand hover:border-ink">
-      <Globe className="size-4" aria-hidden />
-      <span aria-hidden>{locale.toUpperCase()}</span>
-      <span className="sr-only">{t("language")}</span>
-      <select
-        value={locale}
-        disabled={pending}
-        onChange={(e) => change(e.target.value as AppLocale)}
-        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
-      >
-        {locales.map((l) => (
-          <option key={l} value={l} lang={l}>
-            {localeNames[l]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <Picker
+      label={t("language")}
+      value={locale}
+      disabled={pending}
+      onChange={(v) => change(v as AppLocale)}
+      options={locales.map((l) => ({ value: l, label: localeNames[l], lang: l, icon: <Flag code={localeFlags[l]} /> }))}
+      trigger={
+        <>
+          <Flag code={localeFlags[locale]} />
+          <span>{locale.toUpperCase()}</span>
+        </>
+      }
+    />
   );
 }

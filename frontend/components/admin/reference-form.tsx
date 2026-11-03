@@ -16,7 +16,7 @@ const NAME_FIELDS: RefField[] = [
   { name: "nameEn", label: "Ad (en)", type: "text", required: true },
 ];
 
-/** Create/edit form for a district, neighborhood, metro station, university or amenity. */
+/** Create/edit form for a country, city, district, neighborhood, metro station, university or amenity. */
 export function ReferenceForm({
   kind,
   id,
@@ -25,7 +25,7 @@ export function ReferenceForm({
   withSlug = true,
   submitLabel,
 }: {
-  kind: "district" | "neighborhood" | "metro" | "university" | "amenity";
+  kind: "country" | "city" | "district" | "neighborhood" | "metro" | "university" | "amenity";
   id?: string;
   values?: Record<string, unknown>;
   fields: RefField[];

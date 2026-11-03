@@ -6,24 +6,26 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowRight, BadgeCheck, Building2, KeyRound, LockKeyhole, ShieldCheck, UsersRound } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
-import { alternatesFor } from "@/lib/seo";
+import { alternatesFor, openGraphFor } from "@/lib/seo";
 import { getCurrentUser } from "@/server/auth/current";
 import { getLocationOptions } from "@/server/locations";
-import { listingCards } from "@/server/listings/queries";
+import { featuredListingCards, listingCards } from "@/server/listings/queries";
 import { roommateCards } from "@/server/roommates/queries";
-import { districtsWithCounts, universitiesWithCounts } from "@/server/home";
+import { marketOverview, popularCities, universitiesWithCounts } from "@/server/home";
 import { savedIdsFor } from "@/server/engagement";
+import { getCurrentCountry, listingInCountry, roommateInCountry } from "@/server/countries";
 import { ListingCard } from "@/components/listings/listing-card";
 import { RoommateCard } from "@/components/roommates/roommate-card";
 import { HeroSearch } from "@/components/site/hero-search";
+import { CountryChooser } from "@/components/site/country-chooser";
 import { EmptyState, SectionHead } from "@/components/site/section";
 import { MetroDot } from "@/components/listings/category-tag";
-import { DISTRICT_PHOTOS, HERO_PHOTO, SAFETY_PHOTO } from "@/lib/area-photos";
+import { HERO_PHOTO, SAFETY_PHOTO } from "@/lib/area-photos";
+import { nameOf } from "@/lib/i18n-data";
+import { getMoneyView } from "@/server/money";
 import { SEGMENTS, type ListingCategory } from "@/lib/domain";
-import { formatAzn } from "@/lib/format";
 
-const AFFORDABLE_MAX = 250;
-const AREA_DISTRICTS = ["yasamal", "nesimi", "nerimanov", "sebail", "xetai", "nizami"];
+const GRID = 6;
 
 type Props = { params: Promise<{ locale: AppLocale }>; searchParams: Promise<{ cat?: string }> };
 
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: { absolute: t("homeTitle") },
     description: t("homeDescription"),
     alternates: alternatesFor(locale, "/"),
-    openGraph: { title: t("homeTitle"), description: t("homeDescription"), images: [HERO_PHOTO.src] },
+    openGraph: openGraphFor(locale, { title: t("homeTitle"), description: t("homeDescription"), images: [HERO_PHOTO.src] }),
   };
 }
 
@@ -46,30 +48,30 @@ export default async function HomePage({ params, searchParams }: Props) {
   setRequestLocale(locale);
   const { cat: catParam } = await searchParams;
   const activeCat = SEGMENTS.students.find((c) => c.toLowerCase() === catParam) as ListingCategory | undefined;
+  // Everything below shows the visitor's market (header country selector).
+  const [market, money] = await Promise.all([getCurrentCountry(), getMoneyView()]);
+  const inMarket = listingInCountry(market.code);
 
-  const [t, nav, cat, user, options, districts, unis] = await Promise.all([
+  const [t, cat, user, options, markets, cities, unis, promoted] = await Promise.all([
     getTranslations({ locale, namespace: "home" }),
-    getTranslations({ locale, namespace: "nav" }),
     getTranslations({ locale, namespace: "categories" }),
     getCurrentUser(),
-    getLocationOptions(locale, "slug"),
-    districtsWithCounts(locale, AREA_DISTRICTS),
-    universitiesWithCounts(locale),
+    getLocationOptions(locale, "slug", market.code),
+    marketOverview(locale),
+    popularCities(locale, market.code),
+    universitiesWithCounts(locale, market.code),
+    // Featured (VIP) listings lead the grid unless a category pill is chosen.
+    activeCat ? Promise.resolve([]) : featuredListingCards(locale, GRID, "students", market.code),
   ]);
-  const [recent, family, roommates] = await Promise.all([
-    listingCards(locale, { category: activeCat ? activeCat : { in: [...SEGMENTS.students] } }, 6),
-    listingCards(locale, { category: "FAMILY_APARTMENT" }, 3),
-    roommateCards(locale, {}, 6),
+  const marketName = nameOf(market, locale);
+  const [newest, shared, roommates] = await Promise.all([
+    listingCards(locale, { ...inMarket, id: { notIn: promoted.map((l) => l.id) }, category: activeCat ? activeCat : { in: [...SEGMENTS.students] } }, GRID - promoted.length),
+    listingCards(locale, { ...inMarket, category: "SHARED_APARTMENT" }, 3),
+    roommateCards(locale, roommateInCountry(market.code), 6),
   ]);
-  // Cheapest places not already shown in the first grid.
-  const affordable = await listingCards(
-    locale,
-    { id: { notIn: recent.map((l) => l.id) }, category: { in: ["PRIVATE_ROOM", "DORMITORY", "SHARED_APARTMENT"] }, pricePerPlace: true, monthlyRent: { lte: AFFORDABLE_MAX } },
-    3,
-    [{ monthlyRent: "asc" }],
-  );
-  const saved = await savedIdsFor(user?.id, [...recent, ...affordable, ...family].map((l) => l.id));
-  const cards = (list: typeof recent, priority = false) => (
+  const featured = [...promoted, ...newest];
+  const saved = await savedIdsFor(user?.id, [...featured, ...shared.filter((s) => !featured.some((f) => f.id === s.id))].map((l) => l.id));
+  const cards = (list: typeof featured, priority = false) => (
     <ul className="grid gap-[30px] sm:grid-cols-2 lg:grid-cols-3">
       {list.map((l, i) => (
         <li key={l.id}>
@@ -101,15 +103,49 @@ export default async function HomePage({ params, searchParams }: Props) {
           <div className="absolute inset-0 bg-linear-to-b from-transparent from-55% to-[#161e2d] sm:bg-none sm:bg-[#161e2d]/45" aria-hidden />
         </div>
         <div className="shell relative -mt-14 pb-12 text-center sm:mt-0 sm:pt-28 sm:pb-16 lg:pt-36 lg:pb-32">
+          <p className="mb-4 text-sm font-semibold tracking-[0.18em] text-white/80 uppercase">{t("brandLine")}</p>
           <h1 className="t-hero mx-auto max-w-5xl text-white">{t("title")}</h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-white/90">{t("lead")}</p>
           <div className="mx-auto mt-10 max-w-[1290px] lg:mt-16">
-            <HeroSearch districts={options.districts} universities={options.universities.map((u) => ({ value: u.value, label: u.short }))} />
+            <HeroSearch
+              currency={money.display}
+              cities={options.cities}
+              districts={options.districts}
+              universities={options.universities.map((u) => ({ value: u.value, label: u.short, cityValue: u.cityValue }))}
+            />
           </div>
         </div>
       </section>
 
-      {/* Recent student listings with category pills */}
+      {/* Choose your country — sets the market, like the header selector */}
+      <section className="shell section-y" aria-labelledby="countries-h">
+        <SectionHead id="countries-h" subtitle={t("countriesSubtitle")} title={t("countriesTitle")} lead={t("countriesLead")} />
+        <CountryChooser markets={markets} current={market.code} />
+      </section>
+
+      {/* Popular cities of the market — each opens its city page */}
+      {cities.length > 0 && (
+        <section className="shell pb-[60px] lg:pb-[100px]" aria-labelledby="cities-h">
+          <SectionHead id="cities-h" subtitle={t("citiesSubtitle")} title={t("citiesTitle", { country: marketName })} />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {cities.map((c) => (
+              <li key={c.slug}>
+                <Link href={`/cities/${c.slug}`} className="group flex h-full items-center justify-between gap-4 rounded-2xl border border-line p-6 transition-colors hover:border-brand">
+                  <span className="min-w-0">
+                    <span className="block truncate text-xl font-semibold group-hover:text-brand">{c.name}</span>
+                    <span className="mt-1 block text-sm text-ink-2">{t("cityStats", { listings: c.listings, roommates: c.roommates })}</span>
+                  </span>
+                  <span className="grid size-11 shrink-0 place-items-center rounded-full border border-line transition-colors group-hover:border-brand group-hover:bg-brand group-hover:text-white">
+                    <ArrowRight className="size-5" aria-hidden />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Featured student accommodation: featured (VIP) first, then the newest, with category pills */}
       <section className="shell section-y" aria-labelledby="recent-h">
         <SectionHead id="recent-h" subtitle={t("recentSubtitle")} title={t("recentTitle")} />
         <ul className="mb-10 flex flex-wrap justify-center gap-2.5" aria-label={t("searchType")}>
@@ -126,7 +162,7 @@ export default async function HomePage({ params, searchParams }: Props) {
             </li>
           ))}
         </ul>
-        {recent.length ? cards(recent, true) : <EmptyState title={t("emptySection")} />}
+        {featured.length ? cards(featured, true) : <EmptyState title={t("emptySection")} />}
         <div className="mt-12 text-center">
           <Link href={activeCat ? `/students?type=${activeCat.toLowerCase()}` : "/students"} className="btn btn-primary">
             {t("viewAll")}
@@ -135,41 +171,70 @@ export default async function HomePage({ params, searchParams }: Props) {
         </div>
       </section>
 
-      {/* Districts — tall photo cards with an inner white card */}
-      <section className="pb-[60px] lg:pb-[100px]" aria-labelledby="areas-h">
+      {/* Roommates — photo + ad cards on the soft background */}
+      <section className="bg-mist section-y" aria-labelledby="mates-h">
         <div className="shell">
-          <SectionHead id="areas-h" subtitle={t("areasSubtitle")} title={t("areasTitle")} />
+          <SectionHead id="mates-h" subtitle={t("roommatesSubtitle")} title={t("roommatesTitle")} lead={t("roommatesLead")} />
+          <div>
+            {roommates.length ? (
+              <ul className="grid gap-[30px] sm:grid-cols-2 lg:grid-cols-3">
+                {roommates.map((r) => (
+                  <li key={r.id}>
+                    <RoommateCard ad={r} locale={locale} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState title={t("emptySection")} />
+            )}
+          </div>
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            <Link href="/roommates" className="btn btn-primary">
+              {t("roommatesButton")}
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+            <Link href="/roommates/new" className="btn btn-outline">
+              {t("ctaStudentButton")}
+            </Link>
+          </div>
         </div>
-        <ul className="mx-auto flex max-w-[1440px] snap-x gap-2 overflow-x-auto px-[10px] pb-2 lg:grid lg:grid-cols-6 lg:overflow-visible">
-          {districts.map((d) => {
-            const photo = DISTRICT_PHOTOS[d.slug];
-            return (
-              <li key={d.slug} className="w-[15rem] shrink-0 snap-start lg:w-auto">
-                <Link href={`/students?district=${d.slug}`} className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-gray">
-                  {photo && (
-                    <Image
-                      src={photo.src}
-                      alt={locale === "az" ? photo.alt.az : photo.alt.en}
-                      fill
-                      sizes="(min-width: 1024px) 230px, 240px"
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  )}
-                  <span className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 rounded-xl bg-paper p-4">
-                    <span className="min-w-0">
-                      <span className="block text-sm text-ink">{t("areaListings", { count: d.count })}</span>
-                      <span className="block truncate text-lg font-semibold">{d.name}</span>
-                    </span>
-                    <span className="grid size-11 shrink-0 place-items-center rounded-full border border-line transition-colors group-hover:border-brand group-hover:bg-brand group-hover:text-white">
-                      <ArrowRight className="size-5" aria-hidden />
-                    </span>
+      </section>
+
+      {/* Shared apartments */}
+      <section className="shell section-y" aria-labelledby="shared-h">
+        <SectionHead id="shared-h" subtitle={t("sharedSubtitle")} title={t("sharedTitle")} lead={t("sharedLead")} />
+        {shared.length ? cards(shared) : <EmptyState title={t("emptySection")} />}
+        <div className="mt-12 text-center">
+          <Link href="/students?type=shared_apartment" className="btn btn-primary">
+            {t("sharedButton")}
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+      </section>
+
+      {/* Universities */}
+      {unis.length > 0 && (
+      <section className="shell section-y" aria-labelledby="unis-h">
+        <SectionHead id="unis-h" subtitle={t("unisSubtitle")} title={t("unisTitle")} lead={t("unisLead")} />
+        <ul className="grid gap-[30px] sm:grid-cols-2 lg:grid-cols-4">
+          {unis.map((u) => (
+            <li key={u.slug}>
+              <Link href={`/students?uni=${u.slug}`} className="group flex h-full flex-col rounded-2xl border border-line p-6 transition-colors hover:border-brand">
+                <span className="text-xl font-bold group-hover:text-brand">{u.short}</span>
+                <span className="mt-1 text-sm text-ink-2">{u.name}</span>
+                <span className="mt-auto flex items-center justify-between gap-2 border-t border-line pt-4 text-sm">
+                  <span className="flex min-w-0 items-center gap-1.5 text-ink-2">
+                    {u.metro ? <MetroDot line={u.metro.line} /> : null}
+                    <span className="truncate">{u.metro?.name ?? u.district ?? ""}</span>
                   </span>
-                </Link>
-              </li>
-            );
-          })}
+                  <span className="shrink-0 font-semibold">{t("uniListings", { count: u.count })}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </section>
+      )}
 
       {/* How it works — three service boxes */}
       <section className="shell pb-[60px] lg:pb-[100px]" aria-labelledby="how-h">
@@ -213,80 +278,6 @@ export default async function HomePage({ params, searchParams }: Props) {
               <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Affordable rooms */}
-      <section className="shell section-y" aria-labelledby="cheap-h">
-        <SectionHead
-          id="cheap-h"
-          subtitle={t("affordableSubtitle")}
-          title={t("affordableTitle")}
-          lead={t("affordableLead", { price: formatAzn(AFFORDABLE_MAX, locale) })}
-        />
-        {affordable.length ? cards(affordable) : <EmptyState title={t("emptySection")} />}
-      </section>
-
-      {/* Roommates — photo + ad cards on the soft background */}
-      <section className="bg-mist section-y" aria-labelledby="mates-h">
-        <div className="shell">
-          <SectionHead id="mates-h" subtitle={t("roommatesSubtitle")} title={t("roommatesTitle")} lead={t("roommatesLead")} />
-          <div>
-            {roommates.length ? (
-              <ul className="grid gap-[30px] sm:grid-cols-2 lg:grid-cols-3">
-                {roommates.map((r) => (
-                  <li key={r.id}>
-                    <RoommateCard ad={r} locale={locale} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyState title={t("emptySection")} />
-            )}
-          </div>
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
-            <Link href="/roommates" className="btn btn-primary">
-              {t("roommatesButton")}
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-            <Link href="/roommates/new" className="btn btn-outline">
-              {t("ctaStudentButton")}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Universities */}
-      <section className="shell section-y" aria-labelledby="unis-h">
-        <SectionHead id="unis-h" subtitle={t("unisSubtitle")} title={t("unisTitle")} lead={t("unisLead")} />
-        <ul className="grid gap-[30px] sm:grid-cols-2 lg:grid-cols-4">
-          {unis.map((u) => (
-            <li key={u.slug}>
-              <Link href={`/students?uni=${u.slug}`} className="group flex h-full flex-col rounded-2xl border border-line p-6 transition-colors hover:border-brand">
-                <span className="text-xl font-bold group-hover:text-brand">{u.short}</span>
-                <span className="mt-1 text-sm text-ink-2">{u.name}</span>
-                <span className="mt-auto flex items-center justify-between gap-2 border-t border-line pt-4 text-sm">
-                  <span className="flex min-w-0 items-center gap-1.5 text-ink-2">
-                    {u.metro ? <MetroDot line={u.metro.line} /> : null}
-                    <span className="truncate">{u.metro?.name ?? u.district ?? ""}</span>
-                  </span>
-                  <span className="shrink-0 font-semibold">{t("uniListings", { count: u.count })}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Family */}
-      <section className="shell pb-[60px] lg:pb-[100px]" aria-labelledby="family-h">
-        <SectionHead id="family-h" subtitle={t("familySubtitle")} title={t("familyTitle")} />
-        {family.length ? cards(family) : <EmptyState title={t("emptySection")} />}
-        <div className="mt-12 text-center">
-          <Link href="/family" className="btn btn-primary">
-            {nav("family")}
-            <ArrowRight className="size-4" aria-hidden />
-          </Link>
         </div>
       </section>
 

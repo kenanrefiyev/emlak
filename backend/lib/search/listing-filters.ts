@@ -9,6 +9,8 @@ import {
   type ListingSort,
   type Segment,
 } from "@/lib/domain";
+import { isCountryCode } from "@/lib/market";
+import { isCurrencyCode, MAX_AMOUNT_SCALE } from "@/lib/money";
 
 /**
  * Listing search state lives in the URL so searches can be bookmarked and
@@ -18,12 +20,17 @@ import {
 export interface ListingFilters {
   q?: string;
   categories: ListingCategory[];
+  /** Market (country code). Absent in the URL = the visitor's selected market. */
+  country?: string;
+  city?: string;
   district?: string;
   neighborhood?: string;
   metro?: string;
   university?: string;
   priceMin?: number;
   priceMax?: number;
+  /** Currency the price range was typed in (the visitor's display currency). */
+  priceCurrency?: string;
   /** 1..3 exact, 4 = four or more */
   rooms?: number;
   spaces?: number;
@@ -57,7 +64,7 @@ function getter(params: Params) {
 const SLUG = /^[a-z0-9-]{1,60}$/;
 const slug = (v?: string) => (v && SLUG.test(v) ? v : undefined);
 const int = (v: string | undefined, min: number, max: number) => {
-  if (!v || !/^\d{1,6}$/.test(v)) return undefined;
+  if (!v || !/^\d{1,7}$/.test(v)) return undefined;
   const n = Number(v);
   return n >= min && n <= max ? n : undefined;
 };
@@ -72,8 +79,9 @@ export function parseListingFilters(params: Params, segment?: Segment): ListingF
     .map((c) => c.trim().toUpperCase())
     .filter((c): c is ListingCategory => (allowed as readonly string[]).includes(c));
 
-  let priceMin = int(get("min"), 0, PRICE_MAX);
-  let priceMax = int(get("max"), 0, PRICE_MAX);
+  // Bounds may be typed in any market's currency, so allow the largest currency's range.
+  let priceMin = int(get("min"), 0, PRICE_MAX * MAX_AMOUNT_SCALE);
+  let priceMax = int(get("max"), 0, PRICE_MAX * MAX_AMOUNT_SCALE);
   if (priceMin !== undefined && priceMax !== undefined && priceMin > priceMax) [priceMin, priceMax] = [priceMax, priceMin];
 
   const moveIn = get("movein");
@@ -83,12 +91,15 @@ export function parseListingFilters(params: Params, segment?: Segment): ListingF
   return {
     q: q || undefined,
     categories: [...new Set(categories)],
+    country: isCountryCode(get("country")) ? get("country") : undefined,
+    city: slug(get("city")),
     district: slug(get("district")),
     neighborhood: slug(get("area")),
     metro: slug(get("metro")),
     university: slug(get("uni")),
     priceMin,
     priceMax,
+    priceCurrency: isCurrencyCode(get("cur")) ? get("cur") : undefined,
     rooms: int(get("rooms"), 1, 4),
     spaces: int(get("spaces"), 1, 10),
     furnishing: oneOf(get("furnishing"), FURNISHING),
@@ -111,12 +122,15 @@ export function listingFiltersToQuery(f: Partial<ListingFilters>): string {
   const p = new URLSearchParams();
   if (f.q) p.set("q", f.q);
   if (f.categories?.length) p.set("type", f.categories.map((c) => c.toLowerCase()).join(","));
+  if (f.country) p.set("country", f.country);
+  if (f.city) p.set("city", f.city);
   if (f.district) p.set("district", f.district);
   if (f.neighborhood) p.set("area", f.neighborhood);
   if (f.metro) p.set("metro", f.metro);
   if (f.university) p.set("uni", f.university);
   if (f.priceMin !== undefined) p.set("min", String(f.priceMin));
   if (f.priceMax !== undefined) p.set("max", String(f.priceMax));
+  if (f.priceCurrency && (f.priceMin !== undefined || f.priceMax !== undefined)) p.set("cur", f.priceCurrency);
   if (f.rooms) p.set("rooms", String(f.rooms));
   if (f.spaces) p.set("spaces", String(f.spaces));
   if (f.furnishing) p.set("furnishing", f.furnishing);
@@ -138,6 +152,7 @@ export function listingFiltersToQuery(f: Partial<ListingFilters>): string {
 export const LISTING_FILTER_KEYS = [
   "q",
   "categories",
+  "city",
   "district",
   "neighborhood",
   "metro",
@@ -173,6 +188,12 @@ export function withoutFilter(f: ListingFilters, key: ListingFilterKey): Listing
   const next: ListingFilters = { ...f, page: 1 };
   if (key === "categories") next.categories = [];
   else delete (next as Partial<ListingFilters>)[key];
+  if (key === "city") {
+    delete next.district;
+    delete next.neighborhood;
+    delete next.metro;
+    delete next.university;
+  }
   if (key === "district") delete next.neighborhood;
   return next;
 }

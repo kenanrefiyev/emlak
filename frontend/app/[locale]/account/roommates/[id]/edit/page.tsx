@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
 import { requireUser } from "@/server/auth/current";
 import { getLocationOptions } from "@/server/locations";
+import { countryChoices, getCurrentCountry } from "@/server/countries";
 import { db } from "@/server/db";
 import { RoommateForm } from "@/components/roommates/roommate-form";
 import { isoDay } from "@/lib/format";
@@ -13,12 +14,17 @@ export default async function EditRoommatePage({ params }: Props) {
   const { locale, id } = await params;
   setRequestLocale(locale);
   const user = await requireUser(locale);
-  const ad = await db.roommateAd.findUnique({ where: { id }, include: { preferredDistricts: true } });
+  const ad = await db.roommateAd.findUnique({
+    where: { id },
+    include: { preferredDistricts: true, city: { select: { country: { select: { code: true } } } } },
+  });
   if (!ad || (ad.ownerId !== user.id && user.role !== "ADMIN")) notFound();
-  const [t, e, options] = await Promise.all([
+  const [t, e, options, countries, market] = await Promise.all([
     getTranslations({ locale, namespace: "roommateForm" }),
     getTranslations({ locale, namespace: "enums" }),
     getLocationOptions(locale, "id"),
+    countryChoices(locale),
+    getCurrentCountry(),
   ]);
   return (
     <div>
@@ -30,6 +36,8 @@ export default async function EditRoommatePage({ params }: Props) {
       {ad.status === "CLOSED" || ad.status === "ARCHIVED" ? null : (
         <RoommateForm
           options={options}
+          countries={countries}
+          defaultCountry={ad.city?.country.code ?? market.code}
           values={{
             ...ad,
             preferredDistrictIds: ad.preferredDistricts.map((p) => p.districtId),

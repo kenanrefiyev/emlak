@@ -1,28 +1,39 @@
 import { getTranslations } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
-import { formatAzn } from "@/lib/format";
+import { formatMoney } from "@/lib/money";
+import { getMoneyView } from "@/server/money";
 import { rentalCosts, type CostInput, type CostItem, type Total } from "@/lib/costs";
 
 /**
  * "What will I actually pay?" — rent plus running costs, per person and
  * upfront. Unknown amounts are shown as unknown and make the total a lower
- * bound ("at least"), never silently 0.
+ * bound ("at least"), never silently 0. Amounts stay in the listing's own
+ * currency — these are the landlord's figures, not converted estimates.
  */
-export async function CostBreakdown({ listing, otherNote, locale }: { listing: CostInput; otherNote: string | null; locale: AppLocale }) {
-  const t = await getTranslations({ locale, namespace: "costs" });
+export async function CostBreakdown({
+  listing,
+  otherNote,
+  locale,
+}: {
+  listing: CostInput & { currency: string };
+  otherNote: string | null;
+  locale: AppLocale;
+}) {
+  const [t, cur, money] = await Promise.all([getTranslations({ locale, namespace: "costs" }), getTranslations({ locale, namespace: "currency" }), getMoneyView()]);
+  const amount = (value: number) => formatMoney(value, listing.currency, locale);
   const b = rentalCosts(listing);
   const item = (c: CostItem) =>
-    c.kind === "amount" ? formatAzn(c.value, locale) : c.kind === "included" ? t("included") : c.kind === "none" ? t("none") : <span className="text-warn">{t("unknown")}</span>;
-  const total = (x: Total) => (x.complete ? formatAzn(x.value, locale) : t("atLeast", { value: formatAzn(x.value, locale) }));
+    c.kind === "amount" ? amount(c.value) : c.kind === "included" ? t("included") : c.kind === "none" ? t("none") : <span className="text-warn">{t("unknown")}</span>;
+  const total = (x: Total) => (x.complete ? amount(x.value) : t("atLeast", { value: amount(x.value) }));
 
   const monthlyRows = [
-    { label: b.rentPerPlace ? t("rentPerPlace") : t("rent"), value: formatAzn(b.rent, locale) },
+    { label: b.rentPerPlace ? t("rentPerPlace") : t("rent"), value: amount(b.rent) },
     { label: t("utilities"), value: item(b.utilities) },
     { label: t("internet"), value: item(b.internet) },
     { label: otherNote ? t("otherWithNote", { note: otherNote }) : t("other"), value: item(b.other) },
   ];
   const upfrontRows = [
-    { label: t("firstMonth"), value: formatAzn(b.rent, locale) },
+    { label: t("firstMonth"), value: amount(b.rent) },
     { label: t("deposit"), value: item(b.deposit) },
     { label: t("commission"), value: item(b.commission) },
   ];
@@ -66,7 +77,10 @@ export async function CostBreakdown({ listing, otherNote, locale }: { listing: C
           </div>
         </dl>
       </div>
-      <p className="hint sm:col-span-2">{t("note")}</p>
+      <p className="hint sm:col-span-2">
+        {t("note")}
+        {money.display !== listing.currency && ` ${cur("breakdownNote", { currency: listing.currency })}`}
+      </p>
     </div>
   );
 }

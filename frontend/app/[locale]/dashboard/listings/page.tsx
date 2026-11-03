@@ -9,7 +9,8 @@ import { activeSubscription, featuredSlotsUsed } from "@/server/agents";
 import { LISTING_SORT_KEYS, OWNER_STATUSES, dashboardKind, ownerListings, parseListingFilter } from "@/server/dashboard";
 import { LISTING_CATEGORIES } from "@/lib/domain";
 import { nameOf } from "@/lib/i18n-data";
-import { formatAzn, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { formatMoney } from "@/lib/money";
 import { EmptyState } from "@/components/site/section";
 import { Pagination } from "@/components/site/pagination";
 import { ListingsBoard } from "@/components/dashboard/listings-board";
@@ -157,7 +158,8 @@ export default async function DashboardListings({ params, searchParams }: Props)
             title: l.title,
             category: cat(l.category),
             status: l.status,
-            price: formatAzn(l.monthlyRent, locale),
+            // The owner's own price, never converted.
+            price: formatMoney(l.monthlyRent, l.currency, locale),
             area: [l.neighborhood ? nameOf(l.neighborhood, locale) : null, nameOf(l.district, locale)].filter(Boolean).join(", "),
             image: l.image,
             imageCount: l.imageCount,

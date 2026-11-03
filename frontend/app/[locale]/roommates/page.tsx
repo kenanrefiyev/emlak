@@ -7,6 +7,8 @@ import { parseRoommateFilters, roommateFiltersToQuery } from "@/lib/search/roomm
 import { alternatesFor } from "@/lib/seo";
 import { getCurrentUser } from "@/server/auth/current";
 import { getLocationOptions } from "@/server/locations";
+import { countryChoices, resolveCountry } from "@/server/countries";
+import { getMoneyView } from "@/server/money";
 import { searchRoommates } from "@/server/roommates/queries";
 import { RoommateCard } from "@/components/roommates/roommate-card";
 import { RoommateFilterForm } from "@/components/roommates/roommate-filter-form";
@@ -33,13 +35,16 @@ export default async function RoommatesPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const filters = parseRoommateFilters(await searchParams);
-  const [t, s, user, options] = await Promise.all([
+  const market = await resolveCountry(filters.country);
+  const [t, s, user, options, countries, money] = await Promise.all([
     getTranslations({ locale, namespace: "roommates" }),
     getTranslations({ locale, namespace: "search" }),
     getCurrentUser(),
-    getLocationOptions(locale, "slug"),
+    getLocationOptions(locale, "slug", market.code),
+    countryChoices(locale),
+    getMoneyView(),
   ]);
-  const result = await searchRoommates(filters, locale, user?.id);
+  const result = await searchRoommates({ ...filters, country: market.code }, locale, user?.id);
   const query = roommateFiltersToQuery({ ...filters, page: 1 });
 
   return (
@@ -58,8 +63,12 @@ export default async function RoommatesPage({ params, searchParams }: Props) {
       <RoommateFilterForm
         key={query}
         filters={filters}
+        countries={countries}
+        country={market.code}
+        budgetCurrency={filters.budgetCurrency ?? money.display}
+        cities={options.cities}
         districts={options.districts}
-        universities={options.universities.map((u) => ({ value: u.value, label: u.short }))}
+        universities={options.universities.map((u) => ({ value: u.value, label: u.short, cityValue: u.cityValue }))}
       />
 
       <div className="mt-6 mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
@@ -67,7 +76,7 @@ export default async function RoommatesPage({ params, searchParams }: Props) {
           {t("results", { count: result.total })}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
-          <SaveSearchButton kind="ROOMMATES" query={query} loggedIn={Boolean(user)} />
+          <SaveSearchButton kind="ROOMMATES" query={roommateFiltersToQuery({ ...filters, country: market.code, page: 1 })} loggedIn={Boolean(user)} />
           <SearchToolbar
             showView={false}
             sort={filters.sort}

@@ -1,16 +1,16 @@
 {
   "meta": {
     "siteName": "Yuva",
-    "tagline": "Student housing and roommates in Baku",
-    "homeTitle": "Yuva — student housing and roommates in Baku",
-    "homeDescription": "Rooms, shared flats and roommate ads for students moving to Baku. Long-term rental flats for families too.",
-    "studentsTitle": "Student rooms and flats in Baku",
-    "studentsDescription": "Private rooms, shared flats, dormitories and apartments for students in Baku — search by district, metro, university and price.",
-    "familyTitle": "Family rentals in Baku",
-    "familyDescription": "Long-term rental apartments for families in Baku — search by district, number of rooms and price.",
-    "roommatesTitle": "Find a roommate in Baku",
+    "tagline": "Student housing and roommates in Azerbaijan and Turkey",
+    "homeTitle": "YUVA — Find a home. Find your people.",
+    "homeDescription": "Student-friendly rooms, shared flats and roommates in Azerbaijan and Turkey — Baku, Istanbul, Ankara, Izmir and more, with prices in AZN or TRY.",
+    "studentsTitle": "Student rooms and flats in Azerbaijan and Turkey",
+    "studentsDescription": "Private rooms, shared flats, dormitories and apartments for students — search by city, neighbourhood, university and budget.",
+    "familyTitle": "Long-term family rentals",
+    "familyDescription": "Long-term rental apartments for families in Azerbaijan and Turkey — search by city, district, number of rooms and price.",
+    "roommatesTitle": "Find a Roommate in Azerbaijan and Turkey",
     "roommatesDescription": "Ads from students who have a room and students who want to rent together, with a match score based on budget, area and move-in date.",
-    "areasTitle": "Baku districts, metro stations and universities",
+    "areasTitle": "Cities, districts and universities",
     "areasDescription": "Browse rentals by district, neighbourhood, metro station and university.",
     "listingFallbackDescription": "{category} — {area}, {price} per month.",
     "demoNotice": "Demo listing",
@@ -19,7 +19,7 @@
   "nav": {
     "home": "Home",
     "students": "Student homes",
-    "roommates": "Find a roommate",
+    "roommates": "Find a Roommate",
     "family": "Family homes",
     "areas": "Areas",
     "post": "Post an ad",
@@ -37,7 +37,9 @@
     "skipToContent": "Skip to content",
     "mainNav": "Main navigation",
     "notifications": "Notifications",
-    "notificationsCount": "{count, plural, one {Notifications: # new} other {Notifications: # new}}"
+    "notificationsCount": "{count, plural, one {Notifications: # new} other {Notifications: # new}}",
+    "country": "Country",
+    "currency": "Currency"
   },
   "common": {
     "search": "Search",
@@ -151,7 +153,7 @@
     "commission": {
       "NONE": "No agent fee",
       "PERCENT": "Percentage (%)",
-      "FIXED": "Fixed amount (₼)"
+      "FIXED": "Fixed amount"
     },
     "smoking": {
       "NO_SMOKING": "No smoking at home",
@@ -250,8 +252,8 @@
     }
   },
   "home": {
-    "title": "Find your room and roommate in Baku",
-    "lead": "Rooms, shared flats and rent-together ads for students coming to study in Baku — search by university and metro.",
+    "title": "Find your place in the world.",
+    "lead": "Discover student-friendly housing, explore shared spaces and connect with people you'll love living with.",
     "tabs": {
       "rent": "Rooms & flats",
       "roommate": "Roommates",
@@ -260,30 +262,24 @@
     "searchType": "What are you looking for?",
     "searchArea": "District",
     "searchUni": "University",
-    "searchBudget": "Monthly budget (₼)",
-    "searchBudgetPlaceholder": "e.g. 300",
+    "searchBudget": "Monthly budget ({currency})",
+    "searchBudgetPlaceholder": "e.g. {amount}",
     "searchRooms": "Rooms",
     "heroPhotoAlt": "Bright apartment dining area with a sea view",
-    "areasTitle": "Districts students search most",
-    "recentTitle": "New student listings",
-    "affordableTitle": "Affordable rooms",
-    "affordableLead": "{price} a month or less — per place.",
-    "roommatesTitle": "People looking for roommates",
+    "recentTitle": "Featured student accommodation",
+    "roommatesTitle": "Find a Roommate",
     "roommatesLead": "Students with a room and students who want to rent together.",
     "unisTitle": "Find a home near your university",
     "unisLead": "Listings by the university's district and nearest metro station. Check the distance on a map yourself.",
     "uniListings": "{count, plural, =0 {no listings} one {# listing} other {# listings}}",
-    "familyTitle": "Long-term rental flats",
-    "howTitle": "Three ways to find a home in Baku",
+    "howTitle": "How YUVA works",
     "safetyTitle": "How we check listings",
     "safetyLink": "Safety tips",
     "ctaStudentButton": "Post a roommate ad",
     "emptySection": "No listings in this section yet.",
-    "recentSubtitle": "Student listings",
+    "recentSubtitle": "Student accommodation",
     "allCategories": "All",
     "viewAll": "See all listings",
-    "areasSubtitle": "Areas",
-    "areaListings": "{count, plural, =0 {No listings yet} one {# listing} other {# listings}}",
     "howSubtitle": "How it works",
     "howBoxes": {
       "room": {
@@ -318,14 +314,28 @@
         "body": "Contact starts with a request. Phone and email are shown to the other side only after the request is accepted."
       }
     },
-    "affordableSubtitle": "Affordable",
     "roommatesSubtitle": "Roommates",
     "roommatesButton": "All roommate ads",
     "unisSubtitle": "Universities",
-    "familySubtitle": "For families",
     "agentCtaTitle": "Are you an agent or a landlord?",
     "agentCtaBody": "Reach students and families with real, up-to-date listings. Agents get statistics and featured listings.",
-    "agentCtaButton": "Post a rental"
+    "agentCtaButton": "Post a rental",
+    "searchCity": "City",
+    "brandLine": "YUVA — Find a home. Find your people.",
+    "countriesSubtitle": "Countries",
+    "countriesTitle": "Choose your country",
+    "countriesLead": "Listings, cities and prices follow the country you choose. You can switch at any time — your language stays the same.",
+    "countrySelected": "Selected",
+    "countryStats": "{cities, plural, one {# city} other {# cities}} · {listings, plural, one {# listing} other {# listings}} · {roommates, plural, one {# roommate ad} other {# roommate ads}}",
+    "countryBrowse": "Browse homes in {country}",
+    "countrySwitch": "Switch to {country}",
+    "citiesSubtitle": "Cities",
+    "citiesTitle": "Popular cities in {country}",
+    "cityStats": "{listings, plural, =0 {No student listings yet} one {# student listing} other {# student listings}} · {roommates, plural, =0 {no roommate ads} one {# roommate ad} other {# roommate ads}}",
+    "sharedSubtitle": "Shared living",
+    "sharedTitle": "Shared apartments",
+    "sharedLead": "Rent a place in a flat with other students — usually the most affordable way to live near campus.",
+    "sharedButton": "All shared apartments"
   },
   "search": {
     "title": "Search",
@@ -344,7 +354,7 @@
     "neighborhood": "Neighbourhood",
     "metro": "Metro",
     "university": "University",
-    "price": "Monthly price (₼)",
+    "price": "Monthly price ({currency})",
     "priceMin": "Min",
     "priceMax": "Max",
     "rooms": "Rooms",
@@ -376,9 +386,9 @@
     "results": "{count, plural, =0 {No listings found} one {# listing found} other {# listings found}}",
     "activeFilters": "Active filters",
     "removeFilter": "Remove filter {label}",
-    "chipPrice": "{min} – {max} ₼",
-    "chipPriceMin": "from {min} ₼",
-    "chipPriceMax": "up to {max} ₼",
+    "chipPrice": "{min} – {max}",
+    "chipPriceMin": "from {min}",
+    "chipPriceMax": "up to {max}",
     "chipRooms": "{count} rooms",
     "chipSpaces": "{count}+ free places",
     "chipMoveIn": "by {date}",
@@ -401,7 +411,9 @@
     "viewMap": "Map",
     "mapOpen": "Open listing",
     "mapNote": "The map shows the approximate area (metro station, neighbourhood or district centre), not the address.",
-    "mapCapped": "The map shows the first {count} listings — narrow the filters to see the rest."
+    "mapCapped": "The map shows the first {count} listings — narrow the filters to see the rest.",
+    "country": "Country",
+    "city": "City"
   },
   "card": {
     "save": "Save",
@@ -432,7 +444,7 @@
     "noDeposit": "No deposit",
     "commission": "Agent fee",
     "commissionPercent": "{value}% of rent",
-    "commissionFixed": "{value} ₼",
+    "commissionFixed": "{value}",
     "paymentTerms": "Payment terms",
     "overview": "Overview",
     "description": "Description",
@@ -501,11 +513,11 @@
     "otherUniversities": "Universities nearby"
   },
   "roommates": {
-    "heading": "Find a roommate",
+    "heading": "Find a Roommate",
     "lead": "Students with a room and students who want to rent together. The match score compares budget, area, dates and household habits.",
     "create": "Post a roommate ad",
     "filterType": "Ad type",
-    "filterBudget": "My budget (₼/mo)",
+    "filterBudget": "My budget ({currency}/mo)",
     "filterMoveIn": "Move-in date (±30 days)",
     "filterSmoking": "Smoking",
     "results": "{count, plural, =0 {No ads found} one {# ad} other {# ads}}",
@@ -513,7 +525,7 @@
     "emptyBody": "Change the filters or post your own ad so others can find you.",
     "contribution": "Monthly share",
     "budget": "Budget",
-    "budgetRange": "{min}–{max} ₼",
+    "budgetRange": "{min}–{max}",
     "moveIn": "Move-in",
     "duration": "Stay",
     "homeType": "Home type",
@@ -574,7 +586,8 @@
     "profileHiddenNote": "Your profile details (university, year, hometown, bio) are not shown to others on this ad.",
     "saveProfile": "Save profile",
     "unsaveProfile": "Saved",
-    "saveFailed": "Could not save — please try again."
+    "saveFailed": "Could not save — please try again.",
+    "city": "City"
   },
   "roommateForm": {
     "titleNew": "Roommate ad",
@@ -591,7 +604,7 @@
     "description": "About you and the home",
     "descriptionHint": "University, year, daily routine, what you expect. Don't write your phone number or address.",
     "language": "Ad language",
-    "contribution": "Roommate's monthly share (₼)",
+    "contribution": "Roommate's monthly share ({currency})",
     "homeType": "Home type",
     "currentResidents": "How many people live there now",
     "availableSpaces": "How many free places",
@@ -600,8 +613,8 @@
     "metro": "Nearby metro",
     "houseRules": "House rules",
     "houseRulesHint": "Smoking, guests, quiet hours, cleaning rota…",
-    "budgetMin": "Budget — minimum (₼ per person)",
-    "budgetMax": "Budget — maximum (₼ per person)",
+    "budgetMin": "Budget — minimum ({currency} per person)",
+    "budgetMax": "Budget — maximum ({currency} per person)",
     "desiredHome": "Home type you want",
     "groupSize": "How many of you will rent",
     "groupSizeHint": "Including you",
@@ -622,7 +635,12 @@
     "lifestyleOptional": "These questions are optional. Unanswered questions are left out of the match score.",
     "sectionPrivacy": "Privacy",
     "showProfile": "Show my profile details on the ad",
-    "showProfileHint": "University, year of study, hometown and bio. Your phone number is never shown on the ad."
+    "showProfileHint": "University, year of study, hometown and bio. Your phone number is never shown on the ad.",
+    "sectionLocation": "Where?",
+    "country": "Country",
+    "city": "City",
+    "cityHint": "Your ad appears in searches for this city. Amounts are in the country's currency.",
+    "chooseCityFirst": "Choose a city first"
   },
   "listingForm": {
     "titleNew": "Post a rental",
@@ -644,10 +662,10 @@
     "description": "Description",
     "descriptionHint": "At least 40 characters. Who lives there, what's included, house rules. Don't write your phone number — use the request system.",
     "language": "Language of the listing",
-    "monthlyRent": "Monthly rent (₼)",
+    "monthlyRent": "Monthly rent ({currency})",
     "pricePerPlace": "Price is per place",
     "pricePerPlaceHint": "If unticked, the price is for the whole flat.",
-    "deposit": "Deposit (₼)",
+    "deposit": "Deposit ({currency})",
     "commissionType": "Agent fee",
     "commissionValue": "Agent fee amount",
     "paymentTerms": "Payment terms",
@@ -705,7 +723,9 @@
     "submitted": "Listing sent for review.",
     "needsPhoto": "Add at least one photo to send it.",
     "rejectedReason": "Moderator's note: {reason}",
-    "preview": "Preview"
+    "preview": "Preview",
+    "country": "Country",
+    "city": "City"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -912,7 +932,7 @@
   },
   "areas": {
     "heading": "Areas",
-    "lead": "Active listings by Baku district, neighbourhood, metro station and university.",
+    "lead": "Active listings by city, district, neighbourhood, metro station and university in {country}.",
     "districts": "Districts and neighbourhoods",
     "metro": "Metro lines",
     "universities": "Universities",
@@ -975,7 +995,7 @@
     "a7": "Use \"Delete account\" in My account → Security. Your listings and photos are deleted too."
   },
   "footer": {
-    "about": "A rental and roommate platform for students coming to study in Baku — with long-term rentals for families too.",
+    "about": "YUVA — find a home, find your people. Student housing and roommates in Azerbaijan and Turkey, with long-term rentals for families too.",
     "explore": "Explore",
     "help": "Help",
     "legal": "Legal",
@@ -1146,7 +1166,7 @@
         "h": "Listing rules",
         "p": [
           "A listing must be real, current and about a property you have the right to rent out.",
-          "Prices must be in AZN, with payments and fees stated clearly.",
+          "Prices must be in the currency of the listing's country (AZN or TRY), with payments and fees stated clearly.",
           "Ads that discriminate by ethnicity, religion or disability are not allowed. Shared homes may state a male/female preference.",
           "Mark rented places as \"Rented\"."
         ]
@@ -1383,7 +1403,7 @@
         "APARTMENT": "Apartment",
         "HOUSE": "House"
       },
-      "monthlyRentAzn": "Monthly rent (AZN)",
+      "monthlyRentAzn": "Monthly rent ({currency})",
       "mapTitle": "Approximate location",
       "mapThis": "This listing",
       "mapApprox": "approximate area",
@@ -1394,7 +1414,7 @@
       "maxOccupancy": "Free places (maximum)",
       "maxOccupancyHint": "How many people there is room for.",
       "tenantPreference": "Suitable for",
-      "depositAzn": "Deposit (AZN)",
+      "depositAzn": "Deposit ({currency})",
       "utilitiesIncluded": "Utilities",
       "commissionHintAgent": "The commission is shown openly on the listing.",
       "moveIn": "Move-in date",
@@ -1428,14 +1448,16 @@
       "depositHint": "Leave empty to show \"unknown\". Enter 0 if there is no deposit.",
       "costsTitle": "Extra monthly costs",
       "costsLead": "Fill these in so students see the full cost. An empty field is shown as \"Unknown\" on the listing; enter 0 if there is no such cost.",
-      "utilitiesCost": "Utilities (estimate, ₼/month)",
+      "utilitiesCost": "Utilities (estimate, {currency}/month)",
       "utilitiesCostHint": "For the whole home. Leave empty if utilities are included in the rent.",
-      "internetCost": "Internet (₼/month)",
-      "otherCosts": "Other monthly costs (₼)",
+      "internetCost": "Internet ({currency}/month)",
+      "otherCosts": "Other monthly costs ({currency})",
       "otherCostsNote": "What are the other costs?",
       "otherCostsNotePlaceholder": "e.g. building service, lift",
       "costSharers": "How many people share these costs?",
-      "costSharersHint": "Used for the per-person estimate. Leave empty if unknown."
+      "costSharersHint": "Used for the per-person estimate. Leave empty if unknown.",
+      "currency": "Currency",
+      "currencyHint": "Defaults to the currency of the listing's country. All amounts are stored in this currency."
     },
     "inquiries": {
       "leadLandlord": "Inquiries about your listings. Only you see the stage and notes.",
@@ -1635,5 +1657,30 @@
     "inquiryAccepted": "{name} accepted your request: {title}",
     "inquiryDeclined": "{name} declined your request: {title}",
     "channelNote": "Notifications are shown on the site only. New requests are also sent by email."
+  },
+  "currency": {
+    "label": "Currency",
+    "names": {
+      "AZN": "Azerbaijani manat",
+      "TRY": "Turkish lira"
+    },
+    "rateLine": "1 {from} ≈ {value} {to}",
+    "updated": "Rates updated {date}",
+    "source": "Source",
+    "disclaimer": "Converted prices are approximate and for guidance only.",
+    "unavailable": "Exchange rates are unavailable right now, so prices are shown in their original currency.",
+    "approx": "Approximate converted price",
+    "original": "Listing price: {price}",
+    "detailNote": "Approximate converted price at the {date} exchange rate, for guidance only. Payment is made in the currency agreed with the landlord.",
+    "breakdownNote": "Amounts are in the listing's currency ({currency}).",
+    "field": "Currency",
+    "fieldHint": "Defaults to the currency of the listing's country. All amounts are stored in this currency."
+  },
+  "cityPage": {
+    "title": "Student housing in {city}, {country}",
+    "description": "Rooms, shared flats and roommates for students in {city} — compare prices and find a home near your university.",
+    "heading": "Student housing in {city}",
+    "lead": "{city}, {country}: {listings, plural, =0 {no student listings yet} one {# student listing} other {# student listings}} and {roommates, plural, =0 {no roommate ads} one {# roommate ad} other {# roommate ads}}.",
+    "roommatesLink": "Roommates in {city}"
   }
 }

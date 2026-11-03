@@ -1,4 +1,4 @@
-// Yuva — student rental & roommate marketplace for Baku.
+// Yuva — student rental & roommate marketplace for Azerbaijan and Türkiye.
 // Conventions: English identifiers, snake_case tables, explicit status enums,
 // reference data (districts, metro, universities, amenities) carries one name
 // column per public locale; user-generated listing text lives in
@@ -191,15 +191,67 @@ model VerificationRequest {
 }
 
 // ───────────────────────────── Locations ─────────────────────────────
+// Country → City → District → Neighborhood. Metro stations and universities
+// belong to a city. Everything is admin-managed; adding a market is data only.
+
+model Country {
+  id        String  @id @default(cuid())
+  // ISO 3166-1 alpha-2, lowercase ("az", "tr"); also the selector/cookie value.
+  code      String  @unique
+  nameAz    String  @map("name_az")
+  nameTr    String  @map("name_tr")
+  nameRu    String  @map("name_ru")
+  nameEn    String  @map("name_en")
+  // ISO 4217 currency listings in this country default to ("AZN", "TRY").
+  currency  String
+  // Hidden countries keep their data but are not offered to visitors.
+  isActive  Boolean @default(true) @map("is_active")
+  sortOrder Int     @default(0) @map("sort_order")
+  latitude  Float?
+  longitude Float?
+
+  cities City[]
+
+  @@map("countries")
+}
+
+model City {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  countryId String  @map("country_id")
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  nameAz    String  @map("name_az")
+  nameTr    String  @map("name_tr")
+  nameRu    String  @map("name_ru")
+  nameEn    String  @map("name_en")
+  // Shown among the "popular cities" for its country.
+  isPopular Boolean @default(false) @map("is_popular")
+  sortOrder Int     @default(0) @map("sort_order")
+  latitude  Float?
+  longitude Float?
+
+  districts     District[]
+  metroStations MetroStation[]
+  universities  University[]
+  roommateAds   RoommateAd[]
+
+  @@index([countryId, sortOrder])
+  @@map("cities")
+}
 
 model District {
   id     String @id @default(cuid())
   slug   String @unique
+  cityId String @map("city_id")
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Restrict)
   nameAz String @map("name_az")
   nameTr String @map("name_tr")
   nameRu String @map("name_ru")
   nameEn String @map("name_en")
   sortOrder Int @default(0) @map("sort_order")
+  // Approximate centre; a map fallback when a listing names no finer place.
+  latitude  Float?
+  longitude Float?
 
   neighborhoods Neighborhood[]
   metroStations MetroStation[]
@@ -208,6 +260,7 @@ model District {
   roommateAds   RoommateAd[]
   preferredBy   RoommateAdDistrict[]
 
+  @@index([cityId])
   @@map("districts")
 }
 
@@ -242,6 +295,8 @@ model MetroStation {
   id         String    @id @default(cuid())
   slug       String    @unique
   line       MetroLine
+  cityId     String    @map("city_id")
+  city       City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
   districtId String?   @map("district_id")
   district   District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
   nameAz     String    @map("name_az")
@@ -255,6 +310,7 @@ model MetroStation {
   roommateAds  RoommateAd[]
   universities University[]
 
+  @@index([cityId])
   @@map("metro_stations")
 }
 
@@ -262,6 +318,8 @@ model University {
   id             String        @id @default(cuid())
   slug           String        @unique
   shortName      String        @map("short_name")
+  cityId         String        @map("city_id")
+  city           City          @relation(fields: [cityId], references: [id], onDelete: Restrict)
   nameAz         String        @map("name_az")
   nameTr         String        @map("name_tr")
   nameRu         String        @map("name_ru")
@@ -277,6 +335,7 @@ model University {
   roommateAds   RoommateAd[]  @relation("RoommateUniversity")
   profiles      UserProfile[]
 
+  @@index([cityId])
   @@map("universities")
 }
 
@@ -293,6 +352,19 @@ model Amenity {
   listings ListingAmenity[]
 
   @@map("amenities")
+}
+
+// Latest known exchange rates, one row per currency, as units per 1 USD (the
+// provider's base). Refreshed from a free public API; prices are converted for
+// display only and the stored listing amounts never change.
+model ExchangeRate {
+  currency          String   @id // ISO 4217
+  perUsd            Float    @map("per_usd")
+  // When the provider published these rates / when we last fetched them.
+  providerUpdatedAt DateTime @map("provider_updated_at")
+  fetchedAt         DateTime @map("fetched_at")
+
+  @@map("exchange_rates")
 }
 
 // ───────────────────────────── Listings ─────────────────────────────
@@ -370,14 +442,17 @@ model Listing {
   originalLocale Locale          @default(az) @map("original_locale")
   isDemo         Boolean         @default(false) @map("is_demo")
 
-  // Money: whole AZN, language independent.
+  // Money: whole units of `currency`, language independent. Every amount on
+  // the listing (rent, deposit, fixed commission, running costs) is in this
+  // currency; display conversions never write back here.
+  currency        String         @default("AZN") // ISO 4217
   monthlyRent     Int            @map("monthly_rent")
   // For shared homes / rooms: price is per place (true) or for the whole unit.
   pricePerPlace   Boolean        @default(false) @map("price_per_place")
   deposit         Int?
   commissionType  CommissionType @default(NONE) @map("commission_type")
   commissionValue Int?           @map("commission_value")
-  // Monthly running costs in AZN for the whole home. null = not stated (shown
+  // Monthly running costs for the whole home, in the listing currency. null = not stated (shown
   // as unknown, never treated as 0); 0 = none / included.
   utilitiesCost   Int?           @map("utilities_cost")
   internetCost    Int?           @map("internet_cost")
@@ -622,8 +697,15 @@ model RoommateAd {
   rejectionReason String?         @map("rejection_reason")
   originalLocale Locale           @default(az) @map("original_locale")
   isDemo         Boolean          @default(false) @map("is_demo")
+  // The city the ad is about; its country scopes roommate search.
+  cityId         String?          @map("city_id")
+  city           City?            @relation(fields: [cityId], references: [id], onDelete: SetNull)
   title          String
   description    String
+
+  // Contribution and budget amounts are in this currency (ISO 4217): the
+  // currency of the ad's country when it was written.
+  currency            String           @default("AZN")
 
   // Scenario A (HAS_PLACE)
   monthlyContribution Int?             @map("monthly_contribution")
@@ -679,6 +761,7 @@ model RoommateAd {
   @@index([status, monthlyContribution])
   @@index([status, budgetMax])
   @@index([districtId])
+  @@index([cityId])
   @@index([universityId])
   @@index([ownerId, status])
   @@map("roommate_ads")

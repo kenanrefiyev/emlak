@@ -1,34 +1,62 @@
 "use client";
 
+import { toPublicPath } from "@/i18n/paths";
+import type { AppLocale } from "@/i18n/routing";
 import { useId, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { SlidersHorizontal, X } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { ListingFilters } from "@/lib/search/listing-filters";
 import { FURNISHING, GENDER_PREFS, type ListingCategory } from "@/lib/domain";
+import { useSetCountry } from "@/components/site/country-switcher";
+import { GroupedOptions } from "@/components/forms/grouped-options";
+import { amountScale, currencySymbol } from "@/lib/money";
 
 interface Opt {
   value: string;
   label: string;
+  group?: string;
 }
 interface Props {
   path: string;
   filters: ListingFilters;
   categories: readonly ListingCategory[];
-  districts: Opt[];
+  countries: { code: string; name: string }[];
+  /** The market the results are in. */
+  country: string;
+  /** Currency of the price inputs (sent as `cur`, so results compare across currencies). */
+  priceCurrency: string;
+  cities: Opt[];
+  districts: (Opt & { cityValue: string })[];
   neighborhoods: (Opt & { districtValue: string })[];
-  metros: (Opt & { line: string })[];
-  universities: Opt[];
+  metros: (Opt & { line: string; cityValue: string })[];
+  universities: (Opt & { cityValue: string })[];
   showStudentFilters: boolean;
   segment: "students" | "family";
 }
 
 /**
  * Filter panel. A plain GET form (works without JS); with JS it drops empty
- * fields from the URL and narrows neighborhoods to the chosen district.
+ * fields from the URL and narrows districts, metro and universities to the
+ * chosen city and neighborhoods to the chosen district. Changing the country
+ * switches the visitor's market and starts a fresh search there.
  * On small screens it lives in a drawer.
  */
-export function FilterForm({ path, filters: f, categories, districts, neighborhoods, metros, universities, showStudentFilters, segment }: Props) {
+export function FilterForm({
+  path,
+  filters: f,
+  categories,
+  countries,
+  country,
+  priceCurrency,
+  cities,
+  districts,
+  neighborhoods,
+  metros,
+  universities,
+  showStudentFilters,
+  segment,
+}: Props) {
   const nav = useTranslations("nav");
   const t = useTranslations("search");
   const c = useTranslations("common");
@@ -37,9 +65,15 @@ export function FilterForm({ path, filters: f, categories, districts, neighborho
   const locale = useLocale();
   const router = useRouter();
   const id = useId();
+  const setCountry = useSetCountry();
+  const [city, setCity] = useState(f.city ?? "");
   const [district, setDistrict] = useState(f.district ?? "");
   const [open, setOpen] = useState(false);
-  const visibleAreas = district ? neighborhoods.filter((n) => n.districtValue === district) : neighborhoods;
+  const inCity = <T extends { cityValue: string }>(list: T[]) => (city ? list.filter((o) => o.cityValue === city) : list);
+  const visibleDistricts = inCity(districts);
+  const visibleAreas = district
+    ? neighborhoods.filter((n) => n.districtValue === district)
+    : neighborhoods.filter((n) => visibleDistricts.some((d) => d.value === n.districtValue));
 
   function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault();
@@ -71,17 +105,13 @@ export function FilterForm({ path, filters: f, categories, districts, neighborho
         onChange={onChange ? (ev) => onChange(ev.target.value) : undefined}
       >
         <option value="">{c("any")}</option>
-        {opts.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
+        <GroupedOptions options={opts} />
       </select>
     </div>
   );
 
   const form = (
-    <form method="get" action={`/${locale}${path}`} onSubmit={onSubmit} className="space-y-5" aria-label={t("filters")}>
+    <form method="get" action={`/${locale}${toPublicPath(path, locale as AppLocale)}`} onSubmit={onSubmit} className="space-y-5" aria-label={t("filters")}>
       <div className="grid grid-cols-2 gap-2.5">
         {(["students", "family"] as const).map((sg) => (
           <Link
@@ -113,25 +143,54 @@ export function FilterForm({ path, filters: f, categories, districts, neighborho
         </div>
       </fieldset>
 
-      {sel("district", t("district"), districts, district, (v) => setDistrict(v))}
+      {countries.length > 1 && (
+        <div>
+          <label htmlFor={`${id}-country`} className="label">
+            {t("country")}
+          </label>
+          {/* Not submitted with the form: changing it switches the market right away. */}
+          <select
+            id={`${id}-country`}
+            className="field"
+            value={country}
+            onChange={(ev) => {
+              setOpen(false);
+              setCountry(ev.target.value, { pathname: path });
+            }}
+          >
+            {countries.map((o) => (
+              <option key={o.code} value={o.code}>
+                {o.name}
+              </option>
+            ))}
+          </select>
+          {f.country && <input type="hidden" name="country" value={f.country} />}
+        </div>
+      )}
+      {sel("city", t("city"), cities, city, (v) => {
+        setCity(v);
+        setDistrict("");
+      })}
+      {sel("district", t("district"), visibleDistricts, district, (v) => setDistrict(v))}
       {sel("area", t("neighborhood"), visibleAreas, f.neighborhood)}
-      {sel("metro", t("metro"), metros, f.metro)}
-      {showStudentFilters && sel("uni", t("university"), universities, f.university)}
+      {inCity(metros).length > 0 && sel("metro", t("metro"), inCity(metros), f.metro)}
+      {showStudentFilters && inCity(universities).length > 0 && sel("uni", t("university"), inCity(universities), f.university)}
 
       <fieldset>
-        <legend className="label">{t("price")}</legend>
+        <legend className="label">{t("price", { currency: currencySymbol(priceCurrency) })}</legend>
+        <input type="hidden" name="cur" value={priceCurrency} />
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label htmlFor={`${id}-min`} className="sr-only">
               {t("priceMin")}
             </label>
-            <input id={`${id}-min`} name="min" type="number" inputMode="numeric" min={0} max={20000} defaultValue={f.priceMin} placeholder={t("priceMin")} className="field" />
+            <input id={`${id}-min`} name="min" type="number" inputMode="numeric" min={0} max={20000 * amountScale(priceCurrency)} defaultValue={f.priceMin} placeholder={t("priceMin")} className="field" />
           </div>
           <div>
             <label htmlFor={`${id}-max`} className="sr-only">
               {t("priceMax")}
             </label>
-            <input id={`${id}-max`} name="max" type="number" inputMode="numeric" min={0} max={20000} defaultValue={f.priceMax} placeholder={t("priceMax")} className="field" />
+            <input id={`${id}-max`} name="max" type="number" inputMode="numeric" min={0} max={20000 * amountScale(priceCurrency)} defaultValue={f.priceMax} placeholder={t("priceMax")} className="field" />
           </div>
         </div>
       </fieldset>
@@ -219,7 +278,7 @@ export function FilterForm({ path, filters: f, categories, districts, neighborho
         <button type="submit" className="btn btn-primary w-full">
           {c("apply")}
         </button>
-        <a href={`/${locale}${path}`} className="btn btn-ghost w-full" onClick={(ev) => { ev.preventDefault(); setOpen(false); router.push(path); }}>
+        <a href={`/${locale}${toPublicPath(path, locale as AppLocale)}`} className="btn btn-ghost w-full" onClick={(ev) => { ev.preventDefault(); setOpen(false); router.push(path); }}>
           {c("clear")}
         </a>
       </div>
