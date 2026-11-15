@@ -23,7 +23,6 @@ interface Props {
 /** Off-canvas menu (Homelengo mobile pattern) shown below the xl breakpoint. */
 export function MobileNav({ links, countries, country, currency, user, logout }: Props) {
   const t = useTranslations("nav");
-  const meta = useTranslations("meta");
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pathname = usePathname();
@@ -59,7 +58,7 @@ export function MobileNav({ links, countries, country, currency, user, logout }:
       >
         <div className="flex h-full flex-col">
           <div className="flex h-[70px] items-center justify-between border-b border-line px-5">
-            <Logo tagline={meta("logoTagline")} />
+            <Logo />
             <button type="button" className="icon-btn !rounded-full" aria-label={t("closeMenu")} onClick={() => setOpen(false)}>
               <X className="size-5" aria-hidden />
             </button>

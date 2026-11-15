@@ -7,10 +7,9 @@ import { Logo } from "./logo";
 
 /** Compact ink footer: brand + about, two link columns, one legal bar. */
 export async function SiteFooter({ locale }: { locale: AppLocale }) {
-  const [t, nav, meta, settings] = await Promise.all([
+  const [t, nav, settings] = await Promise.all([
     getTranslations({ locale, namespace: "footer" }),
     getTranslations({ locale, namespace: "nav" }),
-    getTranslations({ locale, namespace: "meta" }),
     getSettings(),
   ]);
   const year = new Date().getFullYear();
@@ -40,7 +39,7 @@ export async function SiteFooter({ locale }: { locale: AppLocale }) {
       <div className="shell grid grid-cols-2 gap-x-6 gap-y-8 py-10 md:grid-cols-[1.6fr_1fr_1fr] lg:py-12">
         <div className="col-span-2 max-w-sm md:col-span-1">
           <Link href="/" aria-label="Yuva" className="inline-block">
-            <Logo tagline={meta("logoTagline")} inverse />
+            <Logo inverse />
           </Link>
           <p className="mt-4 text-sm leading-relaxed">{t("about")}</p>
           {settings.contactEmail && (

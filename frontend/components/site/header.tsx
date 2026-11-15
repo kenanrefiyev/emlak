@@ -20,9 +20,8 @@ import { SavedLink, SavedToaster } from "./saved-indicator";
 import { logoutAction } from "@/app/[locale]/(auth)/actions";
 
 export async function SiteHeader({ locale }: { locale: AppLocale }) {
-  const [t, meta, user, countries, market, money, currencies] = await Promise.all([
+  const [t, user, countries, market, money, currencies] = await Promise.all([
     getTranslations({ locale, namespace: "nav" }),
-    getTranslations({ locale, namespace: "meta" }),
     getCurrentUser(),
     countryChoices(locale),
     getCurrentCountry(),
@@ -48,7 +47,7 @@ export async function SiteHeader({ locale }: { locale: AppLocale }) {
     <header className="sticky top-0 z-40 bg-paper shadow-header">
       <div className="mx-auto flex h-[70px] max-w-[1440px] items-center gap-6 px-4 xl:h-[78px] xl:px-[15px]">
         <Link href="/" className="shrink-0" aria-label={`Yuva — ${t("home")}`}>
-          <Logo tagline={meta("logoTagline")} />
+          <Logo />
         </Link>
 
         <nav aria-label={t("mainNav")} className="hidden xl:block">
