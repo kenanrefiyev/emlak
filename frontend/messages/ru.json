@@ -331,6 +331,8 @@
     "countrySwitch": "Перейти: {country}",
     "citiesSubtitle": "Города",
     "citiesTitle": "Популярные города: {country}",
+    "citiesShowAll": "Показать все ({count})",
+    "citiesShowLess": "Свернуть",
     "cityStats": "{listings, plural, =0 {Пока нет объявлений} one {# объявление} few {# объявления} many {# объявлений} other {# объявления}} · {roommates, plural, =0 {нет анкет соседей} one {# анкета соседа} few {# анкеты соседей} many {# анкет соседей} other {# анкеты соседей}}",
     "sharedSubtitle": "Совместное жильё",
     "sharedTitle": "Квартиры на несколько человек",

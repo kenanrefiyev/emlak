@@ -331,6 +331,8 @@
     "countrySwitch": "Switch to {country}",
     "citiesSubtitle": "Cities",
     "citiesTitle": "Popular cities in {country}",
+    "citiesShowAll": "Show all ({count})",
+    "citiesShowLess": "Show less",
     "cityStats": "{listings, plural, =0 {No student listings yet} one {# student listing} other {# student listings}} · {roommates, plural, =0 {no roommate ads} one {# roommate ad} other {# roommate ads}}",
     "sharedSubtitle": "Shared living",
     "sharedTitle": "Shared apartments",

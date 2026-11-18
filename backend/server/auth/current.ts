@@ -60,8 +60,8 @@ export async function requireRole(locale: AppLocale, roles: Role[], next?: strin
 
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await getCurrentUser();
-  if (!user) redirect("/admin/giris");
-  if (user.role !== "ADMIN") redirect("/admin/giris?xeta=icaze");
+  if (!user) redirect("/emlk-xyz/giris");
+  if (user.role !== "ADMIN") redirect("/emlk-xyz/giris?xeta=icaze");
   return user;
 }
 

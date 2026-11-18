@@ -36,7 +36,7 @@ async function seedReference() {
   }
   const countries = new Map((await db.country.findMany()).map((c) => [c.code, c.id]));
   for (const c of CITIES) {
-    const data = { countryId: countries.get(c.country)!, isPopular: true, sortOrder: c.sort, latitude: c.at[0], longitude: c.at[1], ...namesOf(c.names) };
+    const data = { countryId: countries.get(c.country)!, isPopular: c.popular ?? true, sortOrder: c.sort, latitude: c.at[0], longitude: c.at[1], ...namesOf(c.names) };
     await db.city.upsert({ where: { slug: c.slug }, create: { slug: c.slug, ...data }, update: data });
   }
   const cities = new Map((await db.city.findMany()).map((c) => [c.slug, c.id]));

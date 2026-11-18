@@ -1,6 +1,7 @@
 /**
- * The visitor's market (country) is independent of the interface language:
- * someone can browse Türkiye in Azerbaijani. The choice lives in a cookie;
+ * The visitor's market (country). Choosing Azerbaijan or Türkiye also switches
+ * the interface to az / tr; afterwards the language can be changed freely, so
+ * someone can still browse Türkiye in Azerbaijani. The choice lives in a cookie;
  * search URLs may also carry ?country= so shared links open the same market.
  */
 export const COUNTRY_COOKIE = "YUVA_COUNTRY";

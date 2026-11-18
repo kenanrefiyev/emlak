@@ -331,6 +331,8 @@
     "countrySwitch": "Keç: {country}",
     "citiesSubtitle": "Şəhərlər",
     "citiesTitle": "{country}: populyar şəhərlər",
+    "citiesShowAll": "Hamısını göstər ({count})",
+    "citiesShowLess": "Daha az göstər",
     "cityStats": "{listings, plural, =0 {Hələ tələbə elanı yoxdur} other {# tələbə elanı}} · {roommates, plural, =0 {ev yoldaşı elanı yoxdur} other {# ev yoldaşı elanı}}",
     "sharedSubtitle": "Ortaq yaşayış",
     "sharedTitle": "Ortaq mənzillər",

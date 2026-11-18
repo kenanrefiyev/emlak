@@ -6,7 +6,7 @@
 // neighborhood→district links are given only where well known. University
 // district and nearest metro follow the main campus position in OpenStreetMap
 // (see UNIVERSITY_COORDS in backend/lib/baku-geo.ts); admins can correct
-// everything in /admin (Ərazilər, Metro, Universitetlər).
+// everything in the admin panel (Ərazilər, Metro, Universitetlər).
 
 type Names = [az: string, tr: string, ru: string, en: string];
 
@@ -15,7 +15,85 @@ export const COUNTRIES: { code: string; currency: string; names: Names; sort: nu
   { code: "tr", currency: "TRY", names: ["Türkiyə", "Türkiye", "Турция", "Turkey"], sort: 2, at: [39.0, 35.0] },
 ];
 
-export const CITIES: { slug: string; country: string; names: Names; sort: number; at: [number, number] }[] = [
+// Every other city and rayon of Azerbaijan (incl. Naxçıvan), each with one
+// central district so listings can be posted there. Not "popular": the home
+// page shows them behind "Hamısını göstər". Positions are approximate centres.
+// Mirrored by migration 20261118120000_azerbaijan_regions.
+const AZ_REGIONS: [slug: string, az: string, tr: string, ru: string, en: string, lat: number, lng: number][] = [
+  ["abseron", "Abşeron", "Abşeron", "Апшерон", "Absheron", 40.448, 49.755],
+  ["agcabedi", "Ağcabədi", "Ağcabedi", "Агджабеди", "Aghjabadi", 40.053, 47.459],
+  ["agdam", "Ağdam", "Ağdam", "Агдам", "Aghdam", 39.99, 46.93],
+  ["agdas", "Ağdaş", "Ağdaş", "Агдаш", "Agdash", 40.647, 47.476],
+  ["agstafa", "Ağstafa", "Ağstafa", "Агстафа", "Agstafa", 41.119, 45.454],
+  ["agsu", "Ağsu", "Ağsu", "Агсу", "Agsu", 40.57, 48.4],
+  ["astara", "Astara", "Astara", "Астара", "Astara", 38.456, 48.875],
+  ["babek", "Babək", "Babek", "Бабек", "Babek", 39.15, 45.45],
+  ["balaken", "Balakən", "Balaken", "Белоканы", "Balakan", 41.726, 46.405],
+  ["beyleqan", "Beyləqan", "Beylegan", "Бейлаган", "Beylagan", 39.776, 47.616],
+  ["berde", "Bərdə", "Berde", "Барда", "Barda", 40.374, 47.126],
+  ["bilesuvar", "Biləsuvar", "Bilesuvar", "Билясувар", "Bilasuvar", 39.459, 48.545],
+  ["cebrayil", "Cəbrayıl", "Cebrail", "Джебраил", "Jabrayil", 39.4, 47.026],
+  ["celilabad", "Cəlilabad", "Celilabad", "Джалилабад", "Jalilabad", 39.209, 48.497],
+  ["culfa", "Culfa", "Culfa", "Джульфа", "Julfa", 38.956, 45.631],
+  ["daskesen", "Daşkəsən", "Daşkesen", "Дашкесан", "Dashkasan", 40.52, 46.08],
+  ["fuzuli", "Füzuli", "Füzuli", "Физули", "Fuzuli", 39.6, 47.145],
+  ["gedebey", "Gədəbəy", "Gedebey", "Гедабек", "Gadabay", 40.57, 45.81],
+  ["goranboy", "Goranboy", "Goranboy", "Геранбой", "Goranboy", 40.61, 46.79],
+  ["goycay", "Göyçay", "Göyçay", "Гёйчай", "Goychay", 40.653, 47.741],
+  ["goygol", "Göygöl", "Göygöl", "Гёйгёль", "Goygol", 40.586, 46.317],
+  ["haciqabul", "Hacıqabul", "Hacıkabul", "Гаджигабул", "Hajigabul", 40.039, 48.936],
+  ["imisli", "İmişli", "İmişli", "Имишли", "Imishli", 39.87, 48.06],
+  ["ismayilli", "İsmayıllı", "İsmayıllı", "Исмаиллы", "Ismayilli", 40.787, 48.152],
+  ["kelbecer", "Kəlbəcər", "Kelbecer", "Кельбаджар", "Kalbajar", 40.105, 46.038],
+  ["kengerli", "Kəngərli", "Kengerli", "Кенгерли", "Kangarli", 39.39, 45.16],
+  ["kurdemir", "Kürdəmir", "Kürdemir", "Кюрдамир", "Kurdamir", 40.338, 48.161],
+  ["lacin", "Laçın", "Laçın", "Лачин", "Lachin", 39.64, 46.547],
+  ["lenkeran", "Lənkəran", "Lenkeran", "Ленкорань", "Lankaran", 38.754, 48.851],
+  ["lerik", "Lerik", "Lerik", "Лерик", "Lerik", 38.774, 48.415],
+  ["masalli", "Masallı", "Masallı", "Масаллы", "Masally", 39.035, 48.665],
+  ["mingecevir", "Mingəçevir", "Mingeçevir", "Мингечевир", "Mingachevir", 40.764, 47.059],
+  ["naftalan", "Naftalan", "Naftalan", "Нафталан", "Naftalan", 40.507, 46.825],
+  ["naxcivan", "Naxçıvan", "Nahçıvan", "Нахчыван", "Nakhchivan", 39.209, 45.412],
+  ["neftcala", "Neftçala", "Neftçala", "Нефтчала", "Neftchala", 39.376, 49.247],
+  ["oguz", "Oğuz", "Oğuz", "Огуз", "Oghuz", 41.071, 47.465],
+  ["ordubad", "Ordubad", "Ordubad", "Ордубад", "Ordubad", 38.909, 46.023],
+  ["qax", "Qax", "Gah", "Гах", "Gakh", 41.42, 46.92],
+  ["qazax", "Qazax", "Gazah", "Газах", "Gazakh", 41.093, 45.366],
+  ["qebele", "Qəbələ", "Gebele", "Габала", "Gabala", 40.982, 47.846],
+  ["qobustan", "Qobustan", "Gobustan", "Гобустан", "Gobustan", 40.532, 48.927],
+  ["quba", "Quba", "Guba", "Губа", "Guba", 41.361, 48.513],
+  ["qubadli", "Qubadlı", "Gubadlı", "Губадлы", "Gubadly", 39.344, 46.58],
+  ["qusar", "Qusar", "Gusar", "Гусар", "Gusar", 41.427, 48.436],
+  ["saatli", "Saatlı", "Saatlı", "Саатлы", "Saatly", 39.932, 48.37],
+  ["sabirabad", "Sabirabad", "Sabirabad", "Сабирабад", "Sabirabad", 40.006, 48.478],
+  ["salyan", "Salyan", "Salyan", "Сальяны", "Salyan", 39.596, 48.985],
+  ["samux", "Samux", "Samuh", "Самух", "Samukh", 40.766, 46.408],
+  ["sederek", "Sədərək", "Sederek", "Садарак", "Sadarak", 39.71, 44.88],
+  ["siyezen", "Siyəzən", "Siyezen", "Сиазань", "Siyazan", 41.078, 49.112],
+  ["sabran", "Şabran", "Şabran", "Шабран", "Shabran", 41.216, 48.986],
+  ["sahbuz", "Şahbuz", "Şahbuz", "Шахбуз", "Shahbuz", 39.407, 45.574],
+  ["samaxi", "Şamaxı", "Şamahı", "Шемаха", "Shamakhi", 40.63, 48.641],
+  ["seki", "Şəki", "Şeki", "Шеки", "Shaki", 41.192, 47.171],
+  ["semkir", "Şəmkir", "Şemkir", "Шамкир", "Shamkir", 40.83, 46.017],
+  ["serur", "Şərur", "Şerur", "Шарур", "Sharur", 39.553, 44.98],
+  ["sirvan", "Şirvan", "Şirvan", "Ширван", "Shirvan", 39.932, 48.92],
+  ["susa", "Şuşa", "Şuşa", "Шуша", "Shusha", 39.758, 46.749],
+  ["terter", "Tərtər", "Terter", "Тертер", "Tartar", 40.342, 46.932],
+  ["tovuz", "Tovuz", "Tovuz", "Товуз", "Tovuz", 40.992, 45.629],
+  ["ucar", "Ucar", "Ucar", "Уджар", "Ujar", 40.519, 47.654],
+  ["xacmaz", "Xaçmaz", "Haçmaz", "Хачмаз", "Khachmaz", 41.464, 48.806],
+  ["xankendi", "Xankəndi", "Hankendi", "Ханкенди", "Khankendi", 39.816, 46.752],
+  ["xizi", "Xızı", "Hızı", "Хызы", "Khizi", 40.911, 49.07],
+  ["xocali", "Xocalı", "Hocalı", "Ходжалы", "Khojaly", 39.913, 46.79],
+  ["xocavend", "Xocavənd", "Hocavend", "Ходжавенд", "Khojavend", 39.79, 47.11],
+  ["yardimli", "Yardımlı", "Yardımlı", "Ярдымлы", "Yardimli", 38.906, 48.24],
+  ["yevlax", "Yevlax", "Yevlah", "Евлах", "Yevlakh", 40.618, 47.15],
+  ["zaqatala", "Zaqatala", "Zakatala", "Закаталы", "Zagatala", 41.634, 46.643],
+  ["zengilan", "Zəngilan", "Zengilan", "Зангилан", "Zangilan", 39.086, 46.653],
+  ["zerdab", "Zərdab", "Zerdab", "Зардоб", "Zardab", 40.218, 47.708],
+];
+
+export const CITIES: { slug: string; country: string; names: Names; sort: number; at: [number, number]; popular?: boolean }[] = [
   { slug: "baku", country: "az", names: ["Bakı", "Bakü", "Баку", "Baku"], sort: 1, at: [40.4093, 49.8671] },
   { slug: "sumqayit", country: "az", names: ["Sumqayıt", "Sumgayıt", "Сумгаит", "Sumgait"], sort: 2, at: [40.5897, 49.6686] },
   { slug: "ganja", country: "az", names: ["Gəncə", "Gence", "Гянджа", "Ganja"], sort: 3, at: [40.6828, 46.3606] },
@@ -25,6 +103,7 @@ export const CITIES: { slug: string; country: string; names: Names; sort: number
   { slug: "antalya", country: "tr", names: ["Antalya", "Antalya", "Анталья", "Antalya"], sort: 4, at: [36.8969, 30.7133] },
   { slug: "bursa", country: "tr", names: ["Bursa", "Bursa", "Бурса", "Bursa"], sort: 5, at: [40.1885, 29.061] },
   { slug: "eskisehir", country: "tr", names: ["Eskişehir", "Eskişehir", "Эскишехир", "Eskisehir"], sort: 6, at: [39.7767, 30.5206] },
+  ...AZ_REGIONS.map(([slug, az, tr, ru, en, lat, lng], i) => ({ slug, country: "az", names: [az, tr, ru, en] as Names, sort: 10 + i, at: [lat, lng] as [number, number], popular: false })),
 ];
 
 // `at`: approximate centre, for map positions when a listing has no finer place.
@@ -41,7 +120,7 @@ export const DISTRICTS: { slug: string; city: string; names: Names; sort: number
   { slug: "xezer", city: "baku", names: ["Xəzər", "Hazar", "Хазар", "Khazar"], sort: 10 },
   { slug: "qaradag", city: "baku", names: ["Qaradağ", "Karadağ", "Гарадаг", "Garadagh"], sort: 11 },
   { slug: "pirallahi", city: "baku", names: ["Pirallahı", "Pirallahı", "Пираллахи", "Pirallahi"], sort: 12 },
-  // Other cities start with their main districts; admins add more in /admin.
+  // Other cities start with their main districts; admins add more in the admin panel.
   { slug: "sumqayit-merkez", city: "sumqayit", names: ["Sumqayıt mərkəzi", "Sumgayıt merkez", "Центр Сумгаита", "Sumgait centre"], sort: 1, at: [40.5897, 49.6686] },
   { slug: "kepez", city: "ganja", names: ["Kəpəz", "Kepez", "Кяпаз", "Kapaz"], sort: 1, at: [40.695, 46.37] },
   { slug: "gence-nizami", city: "ganja", names: ["Nizami (Gəncə)", "Nizami (Gence)", "Низами (Гянджа)", "Nizami (Ganja)"], sort: 2, at: [40.675, 46.35] },
@@ -63,6 +142,13 @@ export const DISTRICTS: { slug: string; city: string; names: Names; sort: number
   { slug: "osmangazi", city: "bursa", names: ["Osmangazi", "Osmangazi", "Османгази", "Osmangazi"], sort: 2, at: [40.195, 29.06] },
   { slug: "tepebasi", city: "eskisehir", names: ["Tepebaşı", "Tepebaşı", "Тепебаши", "Tepebasi"], sort: 1, at: [39.79, 30.499] },
   { slug: "odunpazari", city: "eskisehir", names: ["Odunpazarı", "Odunpazarı", "Одунпазары", "Odunpazari"], sort: 2, at: [39.765, 30.525] },
+  ...AZ_REGIONS.map(([slug, az, tr, ru, en, lat, lng]) => ({
+    slug: `${slug}-merkez`,
+    city: slug,
+    names: [`${az} mərkəzi`, `${tr} merkez`, `${ru}, центр`, `${en} centre`] as Names,
+    sort: 1,
+    at: [lat, lng] as [number, number],
+  })),
 ];
 
 // `at`: approximate area centre (Baku's come from NEIGHBORHOOD_COORDS in lib/baku-geo).
@@ -154,7 +240,7 @@ export const UNIVERSITIES: { slug: string; short: string; city?: string; distric
   { slug: "khazar", short: "Xəzər", district: "nizami", metro: "neftciler", names: ["Xəzər Universiteti", "Hazar Üniversitesi", "Университет Хазар", "Khazar University"] },
   { slug: "adu", short: "ADU", district: "nesimi", metro: "28-may", names: ["Azərbaycan Dillər Universiteti", "Azerbaycan Diller Üniversitesi", "Азербайджанский университет языков", "Azerbaijan University of Languages"] },
   { slug: "bsu", short: "BSU", district: "nesimi", metro: "28-may", names: ["Bakı Slavyan Universiteti", "Bakü Slav Üniversitesi", "Бакинский славянский университет", "Baku Slavic University"] },
-  // Türkiye — main campus positions, approximate; admins can correct them in /admin.
+  // Türkiye — main campus positions, approximate; admins can correct them in the admin panel.
   { slug: "itu", short: "İTÜ", city: "istanbul", at: [41.1055, 29.025], names: ["İstanbul Texniki Universiteti", "İstanbul Teknik Üniversitesi", "Стамбульский технический университет", "Istanbul Technical University"] },
   { slug: "bogazici", short: "Boğaziçi", city: "istanbul", district: "besiktas", at: [41.0839, 29.0503], names: ["Boğaziçi Universiteti", "Boğaziçi Üniversitesi", "Университет Богазичи", "Boğaziçi University"] },
   { slug: "istanbul-uni", short: "İÜ", city: "istanbul", district: "fatih", at: [41.013, 28.9636], names: ["İstanbul Universiteti", "İstanbul Üniversitesi", "Стамбульский университет", "Istanbul University"] },

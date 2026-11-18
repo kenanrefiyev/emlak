@@ -9,7 +9,7 @@ const intl = createMiddleware(routing);
  * Public routes are always locale-prefixed (/az, /tr, /ru, /en). A new visitor
  * lands on Azerbaijani: Accept-Language is stripped before next-intl sees the
  * request, so only the URL prefix or the remembered locale cookie decide.
- * /admin, /api and /uploads are excluded by the matcher (admin is az-only).
+ * /emlk-xyz (the hidden admin panel), /api and /uploads are excluded by the matcher (admin is az-only).
  *
  * Localized first segments (see i18n/paths): /az/evler is served by the
  * /students route, and the old /az/students permanently redirects to it.
@@ -41,5 +41,5 @@ export default function proxy(request: NextRequest) {
 export const config = {
   // `\\.` in the source is a literal dot in the pattern: files like /favicon.ico skip the proxy.
   // (A single `\.` collapses to "any character" and silently excludes almost every page.)
-  matcher: ["/((?!api|admin|uploads|_next|_vercel|demo|.*\\..*).*)"],
+  matcher: ["/((?!api|emlk-xyz|uploads|_next|_vercel|demo|.*\\..*).*)"],
 };
