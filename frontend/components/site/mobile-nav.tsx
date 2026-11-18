@@ -76,7 +76,7 @@ export function MobileNav({ links, countries, country, currency, user, logout }:
                     <Heart className="size-5" aria-hidden /> {t("saved")}
                   </Link>
                   {user.isAdmin && (
-                    <NextLink href="/admin" className="btn btn-ghost w-full">
+                    <NextLink href="/emlk-xyz" className="btn btn-ghost w-full">
                       {t("adminPanel")}
                     </NextLink>
                   )}

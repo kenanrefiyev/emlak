@@ -76,7 +76,7 @@ export default async function AreasPage({ params }: Props) {
   }));
 
   return (
-    <div className="shell pt-8">
+    <div className="shell pt-8 pb-[60px] lg:pb-[100px]">
       <h1 className="t-h2">{t("heading")}</h1>
       <p className="mt-2 max-w-2xl text-ink-2">{t("lead", { country: nameOf(market, locale) })}</p>
 

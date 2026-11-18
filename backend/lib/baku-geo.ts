@@ -3,7 +3,7 @@
  * used to place listings on the map at area level (metro station → area →
  * university → district centre); a listing's exact address is never mapped.
  * prisma/seed.ts copies them into the reference tables where an admin has not
- * set a value yet, and admins can correct them in /admin.
+ * set a value yet, and admins can correct them in the admin panel.
  */
 export type LatLng = [lat: number, lng: number];
 

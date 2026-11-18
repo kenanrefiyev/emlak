@@ -19,6 +19,7 @@ import { RoommateCard } from "@/components/roommates/roommate-card";
 import { HeroSearch } from "@/components/site/hero-search";
 import { CountryChooser } from "@/components/site/country-chooser";
 import { EmptyState, SectionHead } from "@/components/site/section";
+import { ShowMore } from "@/components/site/show-more";
 import { MetroDot } from "@/components/listings/category-tag";
 import { HERO_PHOTO, SAFETY_PHOTO } from "@/lib/area-photos";
 import { nameOf } from "@/lib/i18n-data";
@@ -80,6 +81,19 @@ export default async function HomePage({ params, searchParams }: Props) {
       ))}
     </ul>
   );
+  const cityCard = (c: (typeof cities)[number]) => (
+    <li key={c.slug}>
+      <Link href={`/cities/${c.slug}`} className="group flex h-full items-center justify-between gap-4 rounded-2xl border border-line p-6 transition-colors hover:border-brand">
+        <span className="min-w-0">
+          <span className="block truncate text-xl font-semibold group-hover:text-brand">{c.name}</span>
+          <span className="mt-1 block text-sm text-ink-2">{t("cityStats", { listings: c.listings, roommates: c.roommates })}</span>
+        </span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full border border-line transition-colors group-hover:border-brand group-hover:bg-brand group-hover:text-white">
+          <ArrowRight className="size-5" aria-hidden />
+        </span>
+      </Link>
+    </li>
+  );
   const how = [
     { key: "room" as const, href: "/students", icon: <KeyRound className="size-12" strokeWidth={1.3} aria-hidden /> },
     { key: "mate" as const, href: "/roommates", icon: <UsersRound className="size-12" strokeWidth={1.3} aria-hidden /> },
@@ -118,7 +132,7 @@ export default async function HomePage({ params, searchParams }: Props) {
       </section>
 
       {/* Choose your country — sets the market, like the header selector */}
-      <section className="shell section-y" aria-labelledby="countries-h">
+      <section className="shell pt-10 pb-[60px] lg:pt-14 lg:pb-[100px]" aria-labelledby="countries-h">
         <SectionHead id="countries-h" subtitle={t("countriesSubtitle")} title={t("countriesTitle")} lead={t("countriesLead")} />
         <CountryChooser markets={markets} current={market.code} />
       </section>
@@ -127,21 +141,14 @@ export default async function HomePage({ params, searchParams }: Props) {
       {cities.length > 0 && (
         <section className="shell pb-[60px] lg:pb-[100px]" aria-labelledby="cities-h">
           <SectionHead id="cities-h" subtitle={t("citiesSubtitle")} title={t("citiesTitle", { country: marketName })} />
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cities.map((c) => (
-              <li key={c.slug}>
-                <Link href={`/cities/${c.slug}`} className="group flex h-full items-center justify-between gap-4 rounded-2xl border border-line p-6 transition-colors hover:border-brand">
-                  <span className="min-w-0">
-                    <span className="block truncate text-xl font-semibold group-hover:text-brand">{c.name}</span>
-                    <span className="mt-1 block text-sm text-ink-2">{t("cityStats", { listings: c.listings, roommates: c.roommates })}</span>
-                  </span>
-                  <span className="grid size-11 shrink-0 place-items-center rounded-full border border-line transition-colors group-hover:border-brand group-hover:bg-brand group-hover:text-white">
-                    <ArrowRight className="size-5" aria-hidden />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <ShowMore
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            showLabel={t("citiesShowAll", { count: cities.length })}
+            hideLabel={t("citiesShowLess")}
+            more={cities.some((c) => !c.popular) ? cities.filter((c) => !c.popular).map(cityCard) : undefined}
+          >
+            {(cities.some((c) => c.popular) ? cities.filter((c) => c.popular) : cities).map(cityCard)}
+          </ShowMore>
         </section>
       )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { ActionForm, CheckboxField, Field, FormError, SubmitButton } from "@/components/forms/action-form";
-import { referenceAction } from "@/app/admin/actions";
+import { referenceAction } from "@/app/emlk-xyz/actions";
 
 export type RefField =
   | { name: string; label: string; type: "text"; required?: boolean; hint?: string }

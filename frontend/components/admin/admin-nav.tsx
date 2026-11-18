@@ -9,7 +9,7 @@ export function AdminNav({ items }: { items: { href: string; label: string; badg
     <nav aria-label="Admin menyusu">
       <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:pb-0">
         {items.map((it) => {
-          const active = it.href === "/admin" ? pathname === "/admin" : pathname.startsWith(it.href);
+          const active = it.href === "/emlk-xyz" ? pathname === "/emlk-xyz" : pathname.startsWith(it.href);
           return (
             <li key={it.href} className="shrink-0">
               <Link

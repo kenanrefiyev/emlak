@@ -33,7 +33,7 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
     await startSession(user.id);
     destination = safeNext(str(formData, "next"), homeFor(user.role, locale));
     // Admins land in the admin panel unless they were heading somewhere specific.
-    if (user.role === "ADMIN" && !str(formData, "next")) destination = "/admin";
+    if (user.role === "ADMIN" && !str(formData, "next")) destination = "/emlk-xyz";
   } catch (err) {
     return failure(err);
   }

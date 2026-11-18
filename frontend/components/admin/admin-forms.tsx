@@ -1,7 +1,7 @@
 "use client";
 
 import { ActionForm, CheckboxField, Field, FormError, SubmitButton } from "@/components/forms/action-form";
-import { featureByIdAction, packageAction, settingsAction } from "@/app/admin/actions";
+import { featureByIdAction, packageAction, settingsAction } from "@/app/emlk-xyz/actions";
 
 
 export function PackageForm({ values }: { values?: Record<string, unknown> & { id?: string } }) {

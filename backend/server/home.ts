@@ -102,7 +102,9 @@ export async function marketOverview(locale: AppLocale) {
 /** The market's popular cities (admin-chosen) with live student-listing and roommate-ad counts. */
 export async function popularCities(locale: AppLocale, country: string) {
   const market = (await getCountries()).find((c) => c.code === country);
-  const cities = (market?.cities ?? []).filter((c) => c.isPopular);
+  // Every city of the market, popular ones first (the home page shows the rest behind "show all").
+  const all = market?.cities ?? [];
+  const cities = [...all.filter((c) => c.isPopular), ...all.filter((c) => !c.isPopular)];
   const [listingRows, roommateRows] = await Promise.all([
     db.district.findMany({
       where: { cityId: { in: cities.map((c) => c.id) } },
@@ -113,6 +115,7 @@ export async function popularCities(locale: AppLocale, country: string) {
   return cities.map((c) => ({
     slug: c.slug,
     name: nameOf(c, locale),
+    popular: c.isPopular,
     listings: listingRows.filter((d) => d.cityId === c.id).reduce((n, d) => n + d._count.listings, 0),
     roommates: roommateRows.find((r) => r.cityId === c.id)?._count._all ?? 0,
   }));
